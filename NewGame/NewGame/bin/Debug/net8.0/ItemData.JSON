@@ -1,0 +1,127 @@
+[
+    {
+        "id": 1,
+        "name": "Grass Block",
+        "texturePath": "Textures/grass.png",
+        "tileType": "GrassTile",
+        "recipe": {},
+        "description": "A block of grass.",
+        "placeable": true
+    },
+    {
+        "id": 2,
+        "name": "Stone Block",
+        "texturePath": "Textures/stone.png",
+        "tileType": "StoneTile",
+        "recipe": {
+            "3": 2
+        },
+        "description": "A block of stone.",
+        "placeable": true
+    },
+    {
+        "id": 3,
+        "name": "Dirt Block",
+        "texturePath": "Textures/dirt.png",
+        "tileType": "DirtTile",
+        "recipe": {},
+        "description": "A block of dirt.",
+        "placeable": true
+    },
+    {
+        "id": 4,
+        "name": "Torch",
+        "texturePath": "Textures/torch.png",
+        "tileType": "Torch",
+        "recipe": {},
+        "description": "A simple torch made of a stick and some coal",
+        "placeable": true
+    },
+    {
+        "id": 5,
+        "name": "Copper Ore",
+        "texturePath": "Textures/copperore.png",
+        "tileType": "CopperOre",
+        "recipe": {},
+        "description": "A chunk of oxidized copper",
+        "placeable": false
+    },
+    {
+        "id": 6,
+        "name": "Furnace",
+        "texturePath": "Textures/furnace.png",
+        "tileType": "Furnace",
+        "recipe": {
+            "2": 10
+        },
+        "description": "A crude furnace made of stone",
+        "placeable": true
+    },
+    {
+        "id": 7,
+        "name": "Wood",
+        "texturePath": "Textures/wood.png",
+        "tileType": "Wood_0",
+        "recipe": {},
+        "description": "A piece of wood",
+        "placeable": false
+    },
+    {
+        "id": 8,
+        "name": "Sapling",
+        "texturePath": "Textures/treesapling.png",
+        "tileType": "TreeTile",
+        "recipe": {},
+        "description": "A sapling",
+        "placeable": true
+    },
+    {
+        "id": 9,
+        "name": "Silver Ore",
+        "texturePath": "Textures/silverore.png",
+        "tileType": "SilverOre",
+        "recipe": {},
+        "description": "A chunk of raw silver",
+        "placeable": false
+    },
+    {
+        "id": 10,
+        "name": "Silver Pickaxe",
+        "texturePath": "Textures/pickaxe.png",
+        "tileType": "",
+        "recipe": {},
+        "description": "A pickaxe made of silver and wood",
+        "placeable": false,
+        "type": "Tool",
+        "damage": 2.5,
+        "speed": 1.2,
+        "toolType": "silverpickaxe"
+    },
+    {
+        "id": 11,
+        "name": "Coal Ore",
+        "texturePath": "Textures/coalore.png",
+        "tileType": "CoalOre",
+        "recipe": {},
+        "description": "A chunk of raw coal",
+        "placeable": false
+    },
+    {
+        "id": 12,
+        "name": "Copper Ingot",
+        "texturePath": "Textures/copperingot.png",
+        "tileType": "",
+        "recipe": {},
+        "description": "A low quality ingot of copper",
+        "placeable": false
+    },
+    {
+        "id":13,
+        "name": "Silver Ingot",
+        "texturePath":"Textures/silveringot.png",
+        "tileType":"",
+        "recipe":{},
+        "description":"A fine ingot of silver",
+        "placeable": false
+    }
+]

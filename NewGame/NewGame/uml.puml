@@ -1,0 +1,315 @@
+@startuml
+' Core classes / engine
+class Game {
+  - List<GameObject> gameObjects
+  - List<Entity> entities
+  + Run()
+  + AddGameObjectToGame(obj)
+  + AddEntityToGame(e)
+  + GetGameObjects() : List<GameObject>
+  + GetEntities() : List<Entity>
+}
+
+abstract class GameObject {
+  - string tag
+  - int ID
+  - Transform transform
+  - List<Component> _components
+  - Dictionary<Type, Component> _componentCache
+  - HashSet<Collider> collidingWith
+  - bool shouldBeDestroyed
+  + Start()
+  + Update()
+  + Draw()
+  + AddComponent<T>()
+  + GetComponent<T>()
+  + GetComponentFast<T>()
+}
+
+abstract class Component
+
+class Transform
+class Collider extends Component {
+  - Rectangle boxCollider
+  - bool isActive
+  - bool isTrigger
+  - bool interactableByEntities
+  - ColliderType colliderType
+  + UpdateBounds(position)
+}
+class Renderer extends Component {
+  - Texture2D sprite
+}
+
+' Entities
+class Entity extends GameObject {
+  - Color color
+  - PhysicsBody physicsBody
+  - Collider collider
+  + Start()
+  + Update()
+  + Draw()
+}
+class Player extends Entity {
+  - Inventory inventory
+  - Physics controls...
+  + HandleMovement()
+  + HandleTileDestruction()
+  + HandleItemPlacing()
+  + GetInteractableTile()
+}
+
+class DroppedItem extends Entity {
+  - Item item
+  - float pickupDelay
+  - float age
+  - bool pickedUp
+  + Start()
+  + Update()
+  + Draw()
+}
+
+' Physics
+class PhysicsBody extends Component {
+  - Vector2 acceleration
+  - Vector2 velocity
+  - Vector2 gravity
+  - bool useGravity
+  - float weight
+}
+class PhysicsSystem {
+  + Update()
+}
+class CollisionSystem {
+  - SpatialHash dynamicSpatialHash
+  - SpatialHash staticSpatialHash
+  + Update()
+  + UpdateTileSpatialHashAroundEntity(pos)
+  + AddTileToSpatialHash(tile)
+  + RemoveTileFromSpatialHash(tile)
+}
+
+' Spatial hash
+class SpatialHash {
+  - Dictionary<(int,int), HashSet<GameObject>> grid
+  + Insert(GameObject)
+  + Remove(GameObject)
+  + QueryNearby(GameObject) : IEnumerable<GameObject>
+}
+
+' World / tiles / chunks
+abstract class Tile extends GameObject {
+  - Collider collider
+  - Renderer renderer
+  - bool isSolid
+  - string tileType
+  - Color color
+  - bool canBeDestroyed
+  - int hitsRequired
+  - Dictionary<short,int> itemIdsDropAmounts
+  - short dropItemId
+  + Start()
+  + Update()
+  + Draw()
+  + OnDestruction()
+  + OnHit()
+}
+
+class MultiTile extends Tile {
+  - int widthInTiles
+  - int heightInTiles
+  - int originTileX
+  - int originTileY
+  + OnPlaced(originX, originY)
+}
+class MultiTilePart extends Tile {
+  - MultiTile parent
+  - int offsetX
+  - int offsetY
+}
+
+class InteractableTile extends MultiTile {
+  - UserInterface userInterface
+}
+class FurnaceTile extends InteractableTile
+class TreeTile extends MultiTile
+
+class GrassTile extends Tile
+class StoneTile extends Tile
+class DirtTile extends Tile
+class BackgroundTile extends Tile
+class CopperOreTile extends Tile
+class Torch extends LightSourceTile
+abstract class LightSourceTile extends Tile {
+  - Light light
+}
+
+class Chunk {
+  - Vector2 position
+  - Dictionary<(int,int), Tile> tileMap
+  - Dictionary<(int,int), Foliage> foliageMap
+  - Dictionary<(int,int), Tile> objectMap
+  - int chunkSize
+  - int chunkHeight
+  - Perlin surfaceNoise
+  - Perlin caveNoise
+  + GenerateChunk()
+  + PlaceMultiTile(parent, originX, originY)
+  + CanPlaceArea(...)
+  + RemoveTileAt(tileIndex)
+  + DrawObjects()
+}
+
+class WorldGeneration {
+  - Dictionary<(int,int), Chunk> chunkMap
+  - List<(int,int)> visibleChunks
+  - int chunkSize
+  - Player playerRef
+  + InitializeChunks()
+  + GenerateWorldFrom(position)
+  + Update()
+  + GetTileAt(worldPos) : Tile?
+  + GetTileAtTileCoordinate(tileCoord) : Tile?
+  + GetChunkIndexAtPosition(pos) : (int,int)
+  + GetTileIndexAtPosition(pos) : (int,int)
+}
+
+class Foliage extends GameObject
+
+' Inventory / UI / Items
+abstract class UserInterface extends GameObject {
+  - Rectangle interactionPanel
+  - bool isHovering
+  - bool shouldOpen
+  + Open()
+  + Close()
+  + IsOpen()
+}
+class Inventory extends UserInterface {
+  - Dictionary<InventorySlot,int> inventory
+  - int inventorySize
+  - int visualInventorySize
+  - bool showTiledInventory
+  - InventorySlot hoveredSlot
+  - bool isDragging
+  - InventorySlot dragStorageSlot
+  - Item draggedItem
+  - int draggedCount
+  + Update()
+  + Draw()
+  + HandleHotbarInput()
+  + AddItem(Item)
+}
+class InventorySlot {
+  - Item itemInSlot
+  - Rectangle rectangle
+  - int index
+}
+class FurnaceInterface extends UserInterface
+
+class Item {
+  - short ID
+  - string name
+  - Texture2D texture
+  - Dictionary<Item,int> recipe
+  - string description
+  - bool placeable
+}
+class ItemData
+class ItemFactory {
+  - Dictionary<short, ItemData> itemDataDict
+  + LoadItems(path)
+  + CreateItem(id) : Item
+  + CreateDroppedItem(id,pos) : DroppedItem
+  + CreateTileFromItem(item,pos) : Tile
+}
+
+' Particles / pool
+class Particle extends GameObject {
+  - bool isActive
+  - Vector2 velocity
+  - float lifetime
+  - float age
+  - Color particleColor
+  - float size
+  - Light light
+  + Init(...)
+  + Update()
+  + Draw()
+}
+class ParticlePool {
+  - Stack<Particle> inactive
+  - List<Particle> ActiveParticles
+  + GetParticle()
+  + Recycle(p)
+  + EmitParticles(...)
+}
+
+' Lighting / camera / scene
+class LightingSystem {
+  - Dictionary<int,int[,]> lightMap
+  - Dictionary<(int,int),(int,int,int,int)> globalLightMap
+  - Dictionary<(int,int),Color> computedLightmap
+  + Update()
+  + ComputeLighting()
+  + RenderLightingTexture()
+}
+class CameraSystem {
+  - Camera2D pixelPerfectCamera
+  - RenderTexture2D pixelPerfectTargetTexture
+  + GetMouseWorldPosition()
+  + GetCamera()
+  + GetPixelPerfectCamera()
+}
+abstract class Scene {
+  + Update()
+  + Draw()
+}
+class StartScene extends Scene
+class MainScene extends Scene {
+  - PhysicsSystem physicsSystem
+  - Player player
+  + DrawInOrder()
+}
+class SceneManager {
+  - Dictionary<SCENE_NAME, Scene> actionsOnScene
+  + UpdateGame()
+  + ChangeToScene(scene)
+}
+
+' relationships / inheritance
+GameObject <|-- Tile
+GameObject <|-- Entity
+GameObject <|-- Foliage
+Component <|-- Collider
+Component <|-- Renderer
+Component <|-- PhysicsBody
+Entity <|-- Player
+Entity <|-- DroppedItem
+Tile <|-- MultiTile
+MultiTile <|-- InteractableTile
+InteractableTile <|-- FurnaceTile
+MultiTile <|-- TreeTile
+Tile <|-- GrassTile
+Tile <|-- StoneTile
+Tile <|-- DirtTile
+Tile <|-- BackgroundTile
+Tile <|-- CopperOreTile
+Tile <|-- Torch
+Game *-- Component
+Entity o-- PhysicsBody
+Entity o-- Collider
+Entity o-- Renderer
+Chunk "1" *-- "many" Tile : tileMap
+Chunk "1" *-- "many" Foliage : foliageMap
+WorldGeneration "1" *-- "many" Chunk : chunkMap
+CollisionSystem "1" *-- SpatialHash
+Chunk ..> WorldGeneration : uses
+Player "1" o-- Inventory
+Inventory "1" *-- InventorySlot
+ItemFactory ..> ItemData
+ParticlePool "1" *-- Particle
+LightingSystem ..> Chunk
+CameraSystem ..> Game
+
+@enduml
