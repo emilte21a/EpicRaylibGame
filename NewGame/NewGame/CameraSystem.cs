@@ -32,11 +32,12 @@ public class CameraSystem
 
     public CameraSystem()
     {
-        camera = new Camera2D();
-
-        camera.Rotation = 0;
-        camera.Target = new Vector2(0, 0);
-        camera.Zoom = 1.2f;
+        camera = new Camera2D
+        {
+            Rotation = 0,
+            Target = new Vector2(0, 0),
+            Zoom = 0.8f
+        };
 
         pixelPerfectCamera = new();
         Raylib.SetTextureFilter(pixelPerfectTargetTexture.Texture, Raylib_cs.TextureFilter.Anisotropic16X);

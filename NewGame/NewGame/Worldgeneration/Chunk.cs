@@ -7,6 +7,7 @@ public class Chunk
     public Dictionary<(int, int), Tile> tileMap = new Dictionary<(int, int), Tile>();
     public Dictionary<(int, int), Foliage> foliageMap = new Dictionary<(int, int), Foliage>();
     public Dictionary<(int, int), TreeTile> treeMap = new Dictionary<(int, int), TreeTile>();
+    public Dictionary<(int, int), BackgroundTile> backgroundTileMap = new Dictionary<(int, int), BackgroundTile>();
 
     public float leftLimit = 0;
     public float rightLimit = 0;
@@ -176,7 +177,7 @@ public class Chunk
         if (tile != null)
         {
             tile.transform.position = new Vector2(x * Core.UNIT_SIZE + position.X, y * Core.UNIT_SIZE + position.Y);
-            tileMap[index] = tile;
+            backgroundTileMap[index] = (BackgroundTile)tile;
         }
     }
 

@@ -28,6 +28,7 @@ public class Game
     {
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(screenWidth, screenHeight, "Game");
+        Raylib.SetConfigFlags(ConfigFlags.AlwaysRunWindow);
         // Raylib.ToggleFullscreen();
         Raylib.SetExitKey(KeyboardKey.Null);
         // LightingSystem.Instance.EnsureRenderTextureSize();
@@ -36,7 +37,7 @@ public class Game
         windowHeight = Raylib.GetScreenHeight();
 
         screenRectangle = new Rectangle(0, 0, screenWidth, screenHeight);
-        
+
     }
 
     public void Run()

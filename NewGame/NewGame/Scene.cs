@@ -54,6 +54,10 @@ public class MainScene : Scene
             {
                 tile.Value.Update();
             }
+            foreach (var tile in chunk.backgroundTileMap)
+            {
+                tile.Value.Update();
+            }
         }
 
         foreach (Entity entity in Game.GetEntities().ToList())
@@ -137,6 +141,16 @@ public class MainScene : Scene
         {
             if (WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk))
             {
+                foreach (var tile in chunk.backgroundTileMap.Values)
+                {
+                    if (tile is MultiTilePart) continue;
+
+                    var col = tile.GetComponent<Collider>();
+                    if (col != null && Raylib.CheckCollisionRecs(Game.screenRectangle, col.boxCollider))
+                    {
+                        tile.Draw();
+                    }
+                }
                 foreach (var tile in chunk.tileMap.Values)
                 {
                     // skip lightweight parts (they are markers only)
@@ -148,6 +162,7 @@ public class MainScene : Scene
                         tile.Draw();
                     }
                 }
+
             }
         }
 

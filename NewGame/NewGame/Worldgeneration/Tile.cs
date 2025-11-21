@@ -197,7 +197,7 @@ public class Torch : Tile
             particleEmitter.brightness = Core.MAX_BRIGHTNESS;
             particleEmitter.particleSpawnDelay = 0.5f;
             particleEmitter.lifeTime = 2;
-            particleEmitter.size = 2;
+            particleEmitter.size = 3;
             particleEmitter.ResetCooldown();
         }
 
@@ -225,24 +225,24 @@ public class Torch : Tile
 
 public class OreTile : Tile
 {
-    protected ParticleEmitter? particleEmitter;
+    // protected ParticleEmitter? particleEmitter;
     public override void Start()
     {
         base.Start();
-        AddComponent<ParticleEmitter>();
-        particleEmitter = GetComponent<ParticleEmitter>();
-        if (particleEmitter != null)
-        {
-            particleEmitter.color = color;
-            particleEmitter.particleAmount = 1;
-            particleEmitter.yVelocity = Random.Shared.Next(-1, 1);
-            particleEmitter.perlinFrequency = 10;
-            particleEmitter.brightness = 1;
-            particleEmitter.particleSpawnDelay = 7f + Random.Shared.Next(-1, 2);
-            particleEmitter.lifeTime = 1;
-            particleEmitter.size = 1;
-            particleEmitter.ResetCooldown();
-        }
+        // AddComponent<ParticleEmitter>();
+        // particleEmitter = GetComponent<ParticleEmitter>();
+        // if (particleEmitter != null)
+        // {
+        //     particleEmitter.color = color;
+        //     particleEmitter.particleAmount = 1;
+        //     particleEmitter.yVelocity = Random.Shared.Next(-1, 1);
+        //     particleEmitter.perlinFrequency = 10;
+        //     particleEmitter.brightness = 1;
+        //     particleEmitter.particleSpawnDelay = 7f + Random.Shared.Next(-1, 2);
+        //     particleEmitter.lifeTime = 1;
+        //     particleEmitter.size = 1;
+        //     particleEmitter.ResetCooldown();
+        // }
     }
 }
 

@@ -1,14 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "syo4uRGpa3Q=",
+  "dgSpecHash": "mmo5eSAGrms=",
   "success": true,
-  "projectFilePath": "c:\\Users\\EmilAdmin\\Downloads\\Gitspel 2021.3.7\\Gitspel\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj",
+  "projectFilePath": "c:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\EmilAdmin\\.nuget\\packages\\libnoise\\0.2.0\\libnoise.0.2.0.nupkg.sha512",
-    "C:\\Users\\EmilAdmin\\.nuget\\packages\\microsoft.toolkit.highperformance\\7.1.2\\microsoft.toolkit.highperformance.7.1.2.nupkg.sha512",
-    "C:\\Users\\EmilAdmin\\.nuget\\packages\\raylib-cs\\7.0.2\\raylib-cs.7.0.2.nupkg.sha512",
-    "C:\\Users\\EmilAdmin\\.nuget\\packages\\raylib-cslo\\4.2.0.9\\raylib-cslo.4.2.0.9.nupkg.sha512",
-    "C:\\Users\\EmilAdmin\\.nuget\\packages\\sharpnoise\\0.12.1.1\\sharpnoise.0.12.1.1.nupkg.sha512"
+    "C:\\Users\\macho\\.nuget\\packages\\libnoise\\0.2.0\\libnoise.0.2.0.nupkg.sha512",
+    "C:\\Users\\macho\\.nuget\\packages\\microsoft.toolkit.highperformance\\7.1.2\\microsoft.toolkit.highperformance.7.1.2.nupkg.sha512",
+    "C:\\Users\\macho\\.nuget\\packages\\raylib-cs\\7.0.2\\raylib-cs.7.0.2.nupkg.sha512",
+    "C:\\Users\\macho\\.nuget\\packages\\raylib-cslo\\4.2.0.9\\raylib-cslo.4.2.0.9.nupkg.sha512",
+    "C:\\Users\\macho\\.nuget\\packages\\sharpnoise\\0.12.1.1\\sharpnoise.0.12.1.1.nupkg.sha512"
   ],
   "logs": [
     {
