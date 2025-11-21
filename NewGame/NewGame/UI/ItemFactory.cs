@@ -62,6 +62,7 @@ public static class ItemFactory
             "TreeTile" => new TreeTile(),
             "SilverOreTile" => new SilverOreTile(),
             "CoalOreTile" => new CoalOreTile(),
+            "CraftingTable" => new CraftingTableTile(),
             _ => throw new Exception($"Unknown tile type: {data.tileType}")
         };
         tile.transform.position = position;
@@ -143,6 +144,7 @@ public static class ItemFactory
         silverPickaxe = 10,
         coalore = 11,
         copperingot = 12,
-        silverIngot = 13
+        silverIngot = 13,
+        craftingtable = 14
     }
 }

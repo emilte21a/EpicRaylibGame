@@ -123,5 +123,16 @@
         "recipe":{},
         "description":"A fine ingot of silver",
         "placeable": false
+    },
+    {
+        "id":14,
+        "name":"Crafting Table",
+        "texturePath":"Textures/craftingtable.png",
+        "tileType":"CraftingTable",
+        "recipe":{
+            "7":4
+        },
+        "description":"A basic crafting table made of wood",
+        "placeable": true
     }
 ]

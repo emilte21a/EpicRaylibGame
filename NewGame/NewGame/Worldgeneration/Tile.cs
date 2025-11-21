@@ -79,7 +79,7 @@ public abstract class Tile : GameObject
     {
         Vector2 particleVelocity = new Vector2(Random.Shared.Next(-1, 1), Random.Shared.Next(-1, 1));
         Vector2 particleOffset = new Vector2(collider.boxCollider.Width / 2f, collider.boxCollider.Height / 2f);
-        ParticlePool.EmitParticles(5, particleVelocity * Random.Shared.Next(10, 30), color, 15, Core.UNIT_SIZE / 6, 5, transform.position, particleOffset);
+        ParticlePool.EmitParticles(5, particleVelocity * Random.Shared.Next(10, 30), color, 15, Core.UNIT_SIZE / 6, 0, transform.position, particleOffset);
 
         Console.WriteLine("Tile destroyed at " + transform.position);
         foreach (var item in itemIdsDropAmounts)
@@ -240,7 +240,7 @@ public class OreTile : Tile
             particleEmitter.brightness = 1;
             particleEmitter.particleSpawnDelay = 7f + Random.Shared.Next(-1, 2);
             particleEmitter.lifeTime = 1;
-            particleEmitter.size = 2;
+            particleEmitter.size = 1;
             particleEmitter.ResetCooldown();
         }
     }
@@ -395,6 +395,32 @@ public class FurnaceTile : InteractableTile
         int rand = Random.Shared.Next(-20, 20) > 0 ? 5 : -5;
 
         transform.zRotation = rand;
+    }
+}
+
+public class CraftingTableTile : InteractableTile
+{
+    public override void OnPlaced(int originTileX, int originTileY)
+    {
+        base.OnPlaced(originTileX, originTileY);
+        transform.position = new Vector2(originTileX * Core.UNIT_SIZE, originTileY * Core.UNIT_SIZE);
+    }
+
+    public override void Start()
+    {
+        base.Start();
+        widthInTiles = 2;
+        heightInTiles = 2;
+        collider.isTrigger = true;
+        isSolid = false;
+        tileType = "CraftingTableTile";
+        itemIdsDropAmounts.Add((short)ItemFactory.ItemID.craftingtable, 1);
+        color = Color.Brown;
+        renderer.sprite = TextureManager.LoadTexture("Textures/craftingtable.png");
+        collider.boxCollider = new Rectangle(transform.position.X, transform.position.Y, Core.UNIT_SIZE * widthInTiles, Core.UNIT_SIZE);
+        // userInterface = new CraftingTableInterface();
+        // var craftingUI = (CraftingTableInterface)userInterface;
+        // craftingUI.ownerTile = this;
     }
 }
 

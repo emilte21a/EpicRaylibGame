@@ -116,6 +116,7 @@ public sealed class Player : Entity
             inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.coalore));
             inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.copperore));
             inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverore));
+            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.craftingtable));
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.K))
