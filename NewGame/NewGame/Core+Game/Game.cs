@@ -37,7 +37,7 @@ public class Game
         windowHeight = Raylib.GetScreenHeight();
 
         screenRectangle = new Rectangle(0, 0, screenWidth, screenHeight);
-
+        SceneManager.Initialize();
     }
 
     public void Run()
@@ -51,7 +51,7 @@ public class Game
                 SceneManager.UpdateGame();
         }
 
-        Raylib.CloseWindow();
+        // Raylib.CloseWindow();
     }
 
     void HandlePauseScreen()
@@ -99,31 +99,6 @@ public class Game
     {
         entities.Add(entity);
     }
-
-    // private static bool needsSort = false;
-
-    // public static void SortByZ()
-    // {
-    //     if (!needsSort) return;
-    //     var sw = System.Diagnostics.Stopwatch.StartNew();
-    //     gameObjects.Sort((a, b) =>
-    //    {
-    //        var aTransform = a.GetComponent<Transform>();
-    //        var bTransform = b.GetComponent<Transform>();
-    //        float az = aTransform?.z ?? 0;
-    //        float bz = bTransform?.z ?? 0;
-    //        return az.CompareTo(bz);
-    //    });
-    //     sw.Stop();
-    //     Console.WriteLine($"Sorting took {sw.ElapsedMilliseconds} ms");
-
-    //     if (needsSort) needsSort = false;
-    // }
-
-    // public static void MarkNeedsSort()
-    // {
-    //     needsSort = true;
-    // }
 
     public static List<GameObject> GetGameObjects()
     {

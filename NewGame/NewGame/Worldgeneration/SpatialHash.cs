@@ -98,4 +98,26 @@ public class SpatialHash
     {
         return grid;
     }
+
+    public void RemoveUsingBounds(GameObject obj, Rectangle bounds)
+    {
+        int minX = (int)MathF.Floor(bounds.X / Core.UNIT_SIZE);
+        int minY = (int)MathF.Floor(bounds.Y / Core.UNIT_SIZE);
+        int maxX = (int)MathF.Floor((bounds.X + bounds.Width) / Core.UNIT_SIZE);
+        int maxY = (int)MathF.Floor((bounds.Y + bounds.Height) / Core.UNIT_SIZE);
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                var key = (x, y);
+                if (grid.TryGetValue(key, out var set))
+                {
+                    set.Remove(obj);
+                    if (set.Count == 0)
+                        grid.Remove(key);
+                }
+            }
+        }
+    }
 }

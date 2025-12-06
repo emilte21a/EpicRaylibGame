@@ -1,13 +1,129 @@
 using System;
+using System.Text.Json;
+using System.IO;
 using SharpNoise.Modules;
 
 public class Chunk
 {
     public Vector2 position;
+    private int chunkSeed;
     public Dictionary<(int, int), Tile> tileMap = new Dictionary<(int, int), Tile>();
     public Dictionary<(int, int), Foliage> foliageMap = new Dictionary<(int, int), Foliage>();
     public Dictionary<(int, int), TreeTile> treeMap = new Dictionary<(int, int), TreeTile>();
     public Dictionary<(int, int), BackgroundTile> backgroundTileMap = new Dictionary<(int, int), BackgroundTile>();
+
+    // map of modified tiles per local tile index; store tile id + optional component state JSON
+    public Dictionary<(int x, int y), ModifiedTileDTO> modifiedTiles = new Dictionary<(int, int), ModifiedTileDTO>();
+
+    // DTO for a saved tile entry
+    public class ModifiedTileDTO
+    {
+        public short TileId { get; set; }
+        public string? ComponentType { get; set; }   // e.g. "FurnaceComponent"
+        public string? ComponentJson { get; set; }   // JSON payload for the component
+    }
+
+    public void MarkTileModified((int x, int y) tileIndex, Tile tile)
+    {
+        var dto = new ModifiedTileDTO
+        {
+            TileId = tile.tileId
+        };
+
+
+        Console.WriteLine($"Saving tile at {tileIndex} with ID: {tile.tileId} (Type: {tile.GetType().Name})");
+
+        // if tile has a FurnaceComponent, serialize its state
+        var furnace = tile.GetComponent<FurnaceComponent>();
+        if (furnace != null)
+        {
+            dto.ComponentType = "FurnaceComponent";
+            dto.ComponentJson = JsonSerializer.Serialize(furnace.ToDTO());
+        }
+
+        // add other component serializers here as needed (e.g. CraftingTableComponent)
+
+        modifiedTiles[tileIndex] = dto;
+    }
+
+    public void MarkTileRemoved((int, int) tileKey)
+    {
+        // mark removed tile and ensure foliage removed on load
+        modifiedTiles[tileKey] = new ModifiedTileDTO { TileId = -1 };
+    }
+
+    public void Unload()
+    {
+        foreach (var t in tileMap.Values)
+            CollisionSystem.Instance.staticSpatialHash.Remove(t);
+
+        foreach (var f in foliageMap.Values)
+            CollisionSystem.Instance.staticSpatialHash.Remove(f);
+
+        foreach (var t in treeMap.Values)
+            CollisionSystem.Instance.staticSpatialHash.Remove(t);
+
+        tileMap.Clear();
+        foliageMap.Clear();
+        treeMap.Clear();
+        backgroundTileMap.Clear();
+    }
+
+    public void ApplyModifications()
+    {
+        foreach (var kvp in modifiedTiles)
+        {
+            var index = (kvp.Key.x, kvp.Key.y);
+            var dto = kvp.Value;
+
+            if (dto.TileId == -1)
+            {
+                // Remove tile that should be removed
+                if (tileMap.TryGetValue(index, out var t))
+                    Game.RemoveGameObject(t);
+
+                tileMap.Remove(index);
+                backgroundTileMap.Remove(index);
+                foliageMap.Remove(index);
+                treeMap.Remove(index);
+                Console.WriteLine($"Saving tile at {index} with ID: {t.tileId} (Type: {t.GetType().Name})");
+                continue;
+            }
+
+            // Otherwise spawn the correct tile by ID
+            Tile tile = TileFactory.CreateTileFromID(dto.TileId, index);
+            if (tile == null)
+                System.Console.WriteLine("Tile is null and is not changed");
+
+            // if (tile is MultiTilePart) continue;
+
+            Vector2 pos = new(index.x * Core.UNIT_SIZE, index.y * Core.UNIT_SIZE);
+            tile.transform.position = pos;
+
+            tileMap[index] = tile;
+
+            if (tile is MultiTile mt)
+                mt.OnPlaced((int)mt.transform.position.X, (int)mt.transform.position.Y);
+
+            // restore component state
+            if (dto.ComponentType == "FurnaceComponent")
+            {
+                var comp = tile.GetComponent<FurnaceComponent>();
+                comp.FromDTO(JsonSerializer.Deserialize<FurnaceComponent.FurnaceStateDTO>(dto.ComponentJson));
+            }
+
+            // then update colliders + spatial hash
+            tile.GetComponent<Collider>()?.UpdateBounds(tile.transform.position);
+            CollisionSystem.Instance.staticSpatialHash.Insert(tile);
+        }
+    }
+
+    private class LoadedEntry
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public ModifiedTileDTO Data { get; set; } = new ModifiedTileDTO();
+    }
 
     public float leftLimit = 0;
     public float rightLimit = 0;
@@ -27,9 +143,9 @@ public class Chunk
 
     private static readonly OreType[] ores =
     [
-        new OreType(typeof(CoalOreTile),   0.82f, 0.95f),
-        new OreType(typeof(CopperOreTile), 0.85f, 0.9f),
-        new OreType(typeof(SilverOreTile), 0.9f, 0.8f)
+        new OreType(typeof(CoalOreTile),   0.95f, 1f),
+        new OreType(typeof(CopperOreTile), 0.98f, 0.9f),
+        new OreType(typeof(SilverOreTile), 0.99f, 0.8f)
     ];
 
     private Perlin[] oreNoises;
@@ -37,7 +153,7 @@ public class Chunk
     public Chunk(Vector2 position, int seed)
     {
         this.position = position;
-        tileMap = new Dictionary<(int, int), Tile>();
+        chunkSeed = seed; // store seed for deterministic decisions
         leftLimit = position.X;
         rightLimit = position.X + chunkSize * Core.UNIT_SIZE;
         upperLimit = position.Y;
@@ -59,6 +175,7 @@ public class Chunk
         }
 
         GenerateChunk();
+        ApplyModifications();
     }
 
     void GenerateChunk()
@@ -70,8 +187,12 @@ public class Chunk
             int worldTileX = (int)((position.X / Core.UNIT_SIZE) + x);
             double nx = worldTileX * 0.01;
 
+            // create a deterministic RNG for this column using chunkSeed and worldTileX
+            // simple combine — you can replace with a better hash if desired
+            int rngSeed = chunkSeed ^ (worldTileX * 73856093);
+            var rng = new Random(rngSeed);
+
             // --- surface using Perlin noise mapped to [0..1] and scaled to an amplitude ---
-            // choose how much the surface can vary (in tiles). tweak multiplier to taste.
             int surfaceAmplitude = chunkSize * 2;
             float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0); // [-1,1]
             float norm = (noiseVal + 1f) * 1f;                     // [0,1]
@@ -103,7 +224,8 @@ public class Chunk
 
                 if (caveValue >= CAVE_THRESHOLD)
                 {
-                    PlaceSolidTile(x, localY, index, surfaceWorldY, caveValue);
+                    // pass rng so foliage/tree decisions are deterministic per column
+                    PlaceSolidTile(x, localY, index, surfaceWorldY, caveValue, rng);
                 }
                 else
                     PlaceBackgroundTile(x, localY, index, surfaceWorldY);
@@ -116,7 +238,8 @@ public class Chunk
                 var surfaceIndex = ((int)((position.X + x * Core.UNIT_SIZE) / Core.UNIT_SIZE), surfaceWorldY);
                 if (tileMap.TryGetValue(surfaceIndex, out var maybeGrass) && maybeGrass is GrassTile)
                 {
-                    if (Random.Shared.Next(0, 10) > 6)
+                    // use the same rng seeded per-column
+                    if (rng.Next(0, 10) > 6)
                     {
                         var tree = new TreeTile();
                         int originX = (int)((position.X / Core.UNIT_SIZE) + x);
@@ -131,7 +254,8 @@ public class Chunk
         }
     }
 
-    void PlaceSolidTile(int x, int y, (int, int) index, int surfaceWorldY, double noiseValue)
+    // update PlaceSolidTile to accept and forward rng to foliage placement
+    void PlaceSolidTile(int x, int y, (int, int) index, int surfaceWorldY, double noiseValue, Random rng)
     {
 
         // compute the world Y for this local y so decisions use global coordinates
@@ -143,7 +267,7 @@ public class Chunk
         {
             tile = new GrassTile();
 
-            PlaceFoliage(x, y, index);
+            PlaceFoliage(x, y, index, rng); // deterministic foliage
         }
         else if (worldY > surfaceWorldY && worldY <= surfaceWorldY + 5)
         {
@@ -306,6 +430,7 @@ public class Chunk
                 treeMap.Remove((tree.originTileX, tree.originTileY));
             }
 
+            modifiedTiles[tileIndex] = new ModifiedTileDTO { TileId = -1 };
             return;
         }
 
@@ -317,6 +442,9 @@ public class Chunk
 
         Game.RemoveGameObject(tile);
         tileMap.Remove(tileIndex);
+
+        // mark removed tile so on reload it stays removed
+        modifiedTiles[tileIndex] = new ModifiedTileDTO { TileId = -1 };
     }
 
     void RemoveMultiTile(MultiTile parent)
@@ -342,10 +470,11 @@ public class Chunk
         return chunkSize;
     }
 
-    private void PlaceFoliage(int x, int y, (int, int) index)
+    private void PlaceFoliage(int x, int y, (int, int) index, Random rng)
     {
-        if (Random.Shared.NextSingle() > 0.6f &&
-        !foliageMap.Keys.Any(k => k.Item1 == index.Item1))
+        // deterministic check using provided rng
+        if (rng.NextDouble() > 0.6 &&
+            !foliageMap.Keys.Any(k => k.Item1 == index.Item1))
         {
             var foliage = new Foliage(
                 (int)(x * Core.UNIT_SIZE + position.X),
@@ -360,7 +489,7 @@ public class Chunk
         {
             var ore = ores[i];
             double noise = oreNoises[i].GetValue(worldTileX * 0.1, worldTileY * 0.1, 0);
-            float normalizedNoise = (float)((noise + 1) * 0.5); // [-1,1] -> [0,1]
+            float normalizedNoise = (float)((noise + 1) * 0.5);
 
             float chance = Raymath.Lerp(ore.BaseChance, ore.DeepChance, depthNormalized);
 
@@ -369,20 +498,5 @@ public class Chunk
         }
 
         return new StoneTile();
-    }
-
-    public bool GetSurfaceIndexAtWorldX(int x, out int? surfaceIndex)
-    {
-        surfaceIndex = null;
-
-        int worldTileX = x / Core.UNIT_SIZE;
-        double nx = worldTileX * 0.01;
-
-        float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0);
-        float norm = noiseVal + 1f;
-        int surfaceWorldY = SURFACE_OFFSET + (int)(norm * (chunkSize * 2));
-
-        surfaceIndex = surfaceWorldY;
-        return true;
     }
 }

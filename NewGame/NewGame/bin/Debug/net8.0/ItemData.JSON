@@ -33,7 +33,10 @@
         "name": "Torch",
         "texturePath": "Textures/torch.png",
         "tileType": "Torch",
-        "recipe": {},
+        "recipe": {
+            "7": 1,
+            "11": 1
+        },
         "description": "A simple torch made of a stick and some coal",
         "placeable": true
     },
@@ -89,7 +92,9 @@
         "name": "Silver Pickaxe",
         "texturePath": "Textures/pickaxe.png",
         "tileType": "",
-        "recipe": {},
+        "recipe": {
+            "7": 1
+        },
         "description": "A pickaxe made of silver and wood",
         "placeable": false,
         "type": "Tool",
@@ -116,23 +121,23 @@
         "placeable": false
     },
     {
-        "id":13,
+        "id": 13,
         "name": "Silver Ingot",
-        "texturePath":"Textures/silveringot.png",
-        "tileType":"",
-        "recipe":{},
-        "description":"A fine ingot of silver",
+        "texturePath": "Textures/silveringot.png",
+        "tileType": "",
+        "recipe": {},
+        "description": "A fine ingot of silver",
         "placeable": false
     },
     {
-        "id":14,
-        "name":"Crafting Table",
-        "texturePath":"Textures/craftingtable.png",
-        "tileType":"CraftingTable",
-        "recipe":{
-            "7":4
+        "id": 14,
+        "name": "Crafting Table",
+        "texturePath": "Textures/craftingtable.png",
+        "tileType": "CraftingTable",
+        "recipe": {
+            "7": 4
         },
-        "description":"A basic crafting table made of wood",
+        "description": "A basic crafting table made of wood",
         "placeable": true
     }
 ]

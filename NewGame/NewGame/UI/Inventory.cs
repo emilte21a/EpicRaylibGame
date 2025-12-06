@@ -1,19 +1,20 @@
+
 public class Inventory : UserInterface, ISlotContainer
 {
-    public List<InventorySlot> inventorySlots = [];
-
+    public InventoryComponent inventoryComp;
     // Expose slots to the generic drop manager
-    public IEnumerable<Slot> Slots => inventorySlots.Cast<Slot>();
+    public IEnumerable<Slot> Slots => inventoryComp.inventorySlots.Cast<Slot>();
 
-    public int inventorySize = 16;
-    public int visualInventorySize = 15;
+    public int inventorySize = Core.PLAYER_INVENTORY_SIZE;
+    public int visualInventorySize = Core.PLAYER_INVENTORY_SIZE - 1;
     public int hotBarLength = 5;
     public bool showTiledInventory = false;
 
     public int hotbarIndex;
 
-    public Inventory()
+    public Inventory(InventoryComponent inventoryComponent)
     {
+        inventoryComp = inventoryComponent;
         Initialize();
         SlotUtils.AddInterface(this);
         shouldOpen = true;
@@ -22,24 +23,15 @@ public class Inventory : UserInterface, ISlotContainer
     public override void Update()
     {
         base.Update();
-        foreach (var slot in inventorySlots)
-        {
-            if (slot.amount <= 0)
-            {
-                slot.itemInSlot = null;
-                slot.amount = 0;
-            }
-        }
-
         UpdateInventoryPosition();
     }
 
     public override void Draw()
     {
-        Raylib.DrawRectangleRec(interactionPanel, new Color(0, 100, 150, 120));
-        for (int i = 0; i < inventorySlots.Count - 1; i++)
+        Raylib.DrawRectangleRec(interactionPanel, Core.UI_INTERACTION_PANEL_COLOR);
+        for (int i = 0; i < inventoryComp.inventorySlots.Count - 1; i++)
         {
-            var slot = inventorySlots[i];
+            var slot = inventoryComp.inventorySlots[i];
             if (slot.index < hotBarLength || (showTiledInventory && slot.index <= visualInventorySize))
             {
                 slot.Draw();
@@ -78,7 +70,7 @@ public class Inventory : UserInterface, ISlotContainer
     public Item? GetSelectedHotbarItem()
     {
         int idx = 0;
-        foreach (var slot in inventorySlots)
+        foreach (var slot in inventoryComp.inventorySlots)
         {
             if (slot.index < hotBarLength)
             {
@@ -88,61 +80,6 @@ public class Inventory : UserInterface, ISlotContainer
             }
         }
         return null;
-    }
-
-    public bool AddItem(Item item)
-    {
-        foreach (var slot in inventorySlots)
-        {
-            if (slot.itemInSlot != null && slot.itemInSlot.ID.Equals(item.ID))
-            {
-                slot.amount++;
-                return true;
-            }
-        }
-
-        for (int i = 0; i < inventorySize - 1; i++)
-        {
-            if (inventorySlots[i].itemInSlot == null)
-            {
-                inventorySlots[i].itemInSlot = item;
-                inventorySlots[i].amount = 1;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void RemoveItem(Item item)
-    {
-        foreach (var slot in inventorySlots)
-        {
-            if (slot.itemInSlot != null && slot.itemInSlot.ID.Equals(item.ID))
-            {
-                slot.itemInSlot = null;
-                break;
-            }
-        }
-    }
-
-    public void DecreaseItemAmount(Item item)
-    {
-        if (item == null) return;
-
-        foreach (var slot in inventorySlots)
-        {
-            if (slot.itemInSlot == null) continue;
-
-            if (slot.itemInSlot.ID.Equals(item.ID))
-            {
-                slot.amount--;
-            }
-        }
-    }
-
-    public bool IsFull()
-    {
-        return !inventorySlots.Any(slot => slot.itemInSlot == null);
     }
 
     void Initialize()
@@ -162,10 +99,10 @@ public class Inventory : UserInterface, ISlotContainer
             slot.index = i;
             // bind slot to this UI
             slot.owner = this;
-            inventorySlots.Add(slot);
+            inventoryComp.inventorySlots.Add(slot);
         }
 
-        foreach (var slot in inventorySlots)
+        foreach (var slot in inventoryComp.inventorySlots)
         {
             if (slot.index < hotBarLength)
             {
@@ -204,7 +141,7 @@ public class Inventory : UserInterface, ISlotContainer
 
         for (int i = 0; i < inventorySize - 1; i++)
         {
-            var slot = inventorySlots[i];
+            var slot = inventoryComp.inventorySlots[i];
             if (slot.index < hotBarLength)
             {
                 slot.rectangle.X = startX + slot.index * (Core.UI_SLOTSIZE + spacing);

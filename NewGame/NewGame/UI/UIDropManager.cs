@@ -12,7 +12,6 @@ public static class UIDropManager
         {
             if (go is ISlotContainer container && container.IsOpen())
             {
-                // If this is the player's Inventory, only consider visible slots.
                 if (container is Inventory inv)
                 {
                     foreach (var slot in inv.Slots.Cast<InventorySlot>())
@@ -32,7 +31,6 @@ public static class UIDropManager
                 }
                 else
                 {
-                    // Generic container (furnace/chest) - test all slots it exposes
                     foreach (var slot in container.Slots)
                     {
                         if (Raylib.CheckCollisionPointRec(mousePos, slot.rectangle))

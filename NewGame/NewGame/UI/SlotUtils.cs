@@ -27,7 +27,10 @@ public static class SlotUtils
 
         if (targetSlot is ResultSlot)
         {
-            Console.WriteLine("Cannot place item into furnace result slot.");
+            return false;
+        }
+        if (targetSlot is CraftingSlot)
+        {
             return false;
         }
 
@@ -99,7 +102,7 @@ public static class SlotUtils
 
             if (ui is Inventory inventory)
             {
-                foreach (var slot in inventory.inventorySlots)
+                foreach (var slot in inventory.inventoryComp.inventorySlots)
                 {
                     bool isVisible = slot.index < inventory.hotBarLength || (inventory.showTiledInventory && slot.index <= inventory.visualInventorySize);
                     if (!isVisible) continue;
@@ -163,6 +166,11 @@ public static class SlotUtils
     {
         if (activeInterfaces.Contains(userInterface))
             activeInterfaces.Remove(userInterface);
+    }
+
+    public static void Clear()
+    {
+        activeInterfaces.Clear();
     }
 
     public static List<UserInterface> GetInterfaces()

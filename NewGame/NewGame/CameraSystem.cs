@@ -40,7 +40,6 @@ public class CameraSystem
         };
 
         pixelPerfectCamera = new();
-        Raylib.SetTextureFilter(pixelPerfectTargetTexture.Texture, Raylib_cs.TextureFilter.Anisotropic16X);
     }
 
     public void Update()

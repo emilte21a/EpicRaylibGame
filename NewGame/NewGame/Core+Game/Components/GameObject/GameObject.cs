@@ -1,7 +1,7 @@
 public abstract class GameObject
 {
     public string tag;
-    public int ID;
+    // public int ID;
     public Transform transform;
     public HashSet<Collider> collidingWith = [];
     public bool shouldBeDestroyed = false;

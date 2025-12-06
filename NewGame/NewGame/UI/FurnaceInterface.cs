@@ -1,27 +1,54 @@
+using LibNoise.Renderer;
+
 public class FurnaceInterface : UserInterface, ISlotContainer
 {
     public FurnaceSlot fuelSlot = new FurnaceSlot(null);
     public FurnaceSlot inputSlot = new FurnaceSlot(null);
     public ResultSlot resultSlot = new ResultSlot(null);
     public FurnaceTile ownerTile = null;
-    public IEnumerable<Slot> Slots => new Slot[] { inputSlot, fuelSlot, resultSlot };
+    public IEnumerable<Slot> Slots => [inputSlot, fuelSlot, resultSlot];
 
     public FurnaceInterface()
     {
         Console.WriteLine("FurnaceInterface created " + GetHashCode());
-        interactionPanel = new Raylib_cs.Rectangle(100, 100, 900, 600);
-        fuelSlot.rectangle.Position = new Vector2(300, 300);
-        inputSlot.rectangle.Position = new Vector2(300 + Core.UI_SLOTSIZE + 10, 300);
-        resultSlot.rectangle.Position = new Vector2(300 + (Core.UI_SLOTSIZE + 10) * 3, 300);
+
+        float panelW = 800;
+        float panelH = 300;
+
+        // center panel inside the game window
+        interactionPanel = new Raylib_cs.Rectangle(
+            (Game.screenWidth - panelW) / 2,
+            (Game.screenHeight - panelH) / 2,
+            panelW,
+            panelH
+        );
+
+        // base Y row for slot layout
+        float baseY = interactionPanel.Y + 200;
+
+        // X positions relative to the panel
+        float xFuel = interactionPanel.X + 200;
+        float xInput = xFuel + Core.UI_SLOTSIZE + 20;
+        float xResult = xInput + (Core.UI_SLOTSIZE + 20) * 2;
+
+        // place slots at centered positions
+        fuelSlot.rectangle.Position = new Vector2(xFuel, baseY);
+        inputSlot.rectangle.Position = new Vector2(xInput, baseY);
+        resultSlot.rectangle.Position = new Vector2(xResult, baseY);
+
         fuelSlot.inputType = inputType.fuel;
         inputSlot.inputType = inputType.smeltable;
-        // bind slots to this UI so they only respond when UI is open
+
         fuelSlot.owner = this;
         inputSlot.owner = this;
         resultSlot.owner = this;
 
+        fuelSlot.SetSlotFrame("Textures/fuelslotframe.png");
+        inputSlot.SetSlotFrame("Textures/inputslotframe.png");
+
         SetupAcceptedSlotInputs();
     }
+
 
     public void SetupAcceptedSlotInputs()
     {
@@ -30,6 +57,7 @@ public class FurnaceInterface : UserInterface, ISlotContainer
 
         //INPUTSLOT
         inputSlot.acceptedInputTypes.Add((short)ItemFactory.ItemID.copperore);
+        inputSlot.acceptedInputTypes.Add((short)ItemFactory.ItemID.silverore);
     }
 
     public override void Update()
@@ -53,7 +81,8 @@ public class FurnaceInterface : UserInterface, ISlotContainer
     public override void Draw()
     {
         base.Draw();
-        Raylib.DrawRectangleRec(interactionPanel, new Color(0, 100, 150, 120));
+        Raylib.DrawRectangleRec(interactionPanel, Core.UI_INTERACTION_PANEL_COLOR);
+        Raylib.DrawRectangleLinesEx(interactionPanel, 1, Color.Black);
         foreach (var slot in Slots)
         {
             slot.Draw();
@@ -90,13 +119,8 @@ public class FurnaceInterface : UserInterface, ISlotContainer
                Color.DarkGray
            );
         }
-
-        Raylib.DrawRectangleLinesEx(fuelSlot.rectangle, 2, Color.Red);
-        Raylib.DrawRectangleLinesEx(inputSlot.rectangle, 2, Color.Green);
     }
 }
-
-
 
 public enum inputType
 {

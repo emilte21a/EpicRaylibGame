@@ -47,8 +47,18 @@ public class LightingSystem
     int uOffsetLoc;
 
     // static direction arrays so we don't allocate them every frame
-    private static readonly int[] dx = new[] { -1, 1, 0, 0 };
-    private static readonly int[] dy = new[] { 0, 0, -1, 1 };
+    private static readonly int[] dx = [-1, 1, 0, 0];
+    private static readonly int[] dy = [0, 0, -1, 1];
+
+    RenderTexture2D godrayTexture;
+
+    // occlusion (blocking) render target
+    RenderTexture2D occlusionTexture;
+
+    // godray shader & uniform locations
+    Shader godrayOcclusionShader;
+    int uLightPosLoc, uExposureLoc, uDecayLoc, uDensityLoc, uWeightLoc, uSamplesLoc;
+    int uSceneTexLoc, uOccTexLoc;
 
     private LightingSystem() { }
 
@@ -71,6 +81,22 @@ public class LightingSystem
         // Create two ping-pong blur buffers
         blurA = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
         blurB = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
+
+        // Occlusion target
+        occlusionTexture = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
+        godrayTexture = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
+        // Godray shader that uses occlusion
+        godrayOcclusionShader = Raylib.LoadShader(null, "Shaders/godrays_occlusion.fs");
+
+        // Uniform locations (some backends use names; Raylib returns location ints)
+        uSceneTexLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "sceneTex");
+        uOccTexLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "occlusionTex");
+        uLightPosLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "lightPos");
+        uExposureLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "exposure");
+        uDecayLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "decay");
+        uDensityLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "density");
+        uWeightLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "weight");
+        uSamplesLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "samples");
     }
 
     public void Update()
@@ -83,7 +109,9 @@ public class LightingSystem
         var visibleChunks = WorldGeneration.Instance.visibleChunks;
         var chunkMap = WorldGeneration.Instance.chunkMap;
 
-        // 1) Sky lighting: add skylight down columns until blocked
+        // 1) SKY LIGHT
+        float skylightBrightness = (int)(Core.MAX_BRIGHTNESS * DayNightSystem.Instance.GetSkyLightMultiplier());
+
         foreach (var chunkIndex in visibleChunks)
         {
             if (!chunkMap.TryGetValue(chunkIndex, out var chunk)) continue;
@@ -91,27 +119,25 @@ public class LightingSystem
             int chunkTilesWide = Core.CHUNK_SIZE;
             int chunkTileStartX = chunkIndex.Item1 * Core.CHUNK_SIZE;
 
-            int skyLevel = Core.MAX_BRIGHTNESS;
             for (int lx = 0; lx < chunkTilesWide; lx++)
             {
                 int gx = chunkTileStartX + lx;
-                int worldX = gx * Core.UNIT_SIZE;
 
-                // Most chunks will implement a quick surface query; reuse it
-                if (!chunk.GetSurfaceIndexAtWorldX(worldX, out int? surfaceTileAtX) || surfaceTileAtX == null)
+                if (!WorldGeneration.Instance.GetSurfaceIndexAtWorldX(gx * Core.UNIT_SIZE, out int? surfaceTileAtX) || surfaceTileAtX == null)
                     continue;
 
                 for (int gy = 0; gy <= surfaceTileAtX.Value; gy++)
                 {
                     var key = (gx, gy);
-                    // stop if we hit a solid tile that blocks light
+
+                    // stop if tile blocks light
                     if (chunk.tileMap.TryGetValue(key, out var t) && t.blocksLight)
                         break;
 
-                    // add skylight
-                    var val = new LightValue(255, 255, 255, skyLevel);
+                    // add skylight with dimming factor
+                    var val = new LightValue(255, 255, 255, (int)skylightBrightness);
                     globalLightMap[key] = val;
-                    bfsQueue.Enqueue(new LightNode(gx, gy, skyLevel, Color.White));
+                    bfsQueue.Enqueue(new LightNode(gx, gy, (int)skylightBrightness, Color.White));
                 }
             }
         }
@@ -288,7 +314,7 @@ public class LightingSystem
             int brightness = p.lightSource?.light.GetBrightness() ?? 0;
             if (brightness <= 0) continue;
 
-            float radius = brightness; 
+            float radius = brightness;
 
             byte alpha = (byte)Math.Clamp((1 - p.age) * 255, 0, 255);
             Color col = new Color(p.particleColor.R, p.particleColor.G, p.particleColor.B, alpha);
@@ -321,9 +347,22 @@ public class LightingSystem
         );
 
         Raylib.EndBlendMode();
+
+        Raylib.BeginBlendMode(BlendMode.Additive);
+
+        Raylib.DrawTexturePro(
+            godrayTexture.Texture,
+            new Rectangle(0, 0, godrayTexture.Texture.Width, -godrayTexture.Texture.Height),
+            new Rectangle(0, 0, godrayTexture.Texture.Width, godrayTexture.Texture.Height),
+            Vector2.Zero,
+            0f,
+            Color.White
+        );
+
+        Raylib.EndBlendMode();
     }
 
-    private void KawaseBlurPass(RenderTexture2D src, RenderTexture2D dst, float offset)
+    public void KawaseBlurPass(RenderTexture2D src, RenderTexture2D dst, float offset)
     {
         Vector2 res = new(src.Texture.Width, src.Texture.Height);
         Raylib.SetShaderValue(kawaseShader, uResolutionLoc, res, ShaderUniformDataType.Vec2);
@@ -346,4 +385,106 @@ public class LightingSystem
         Raylib.EndTextureMode();
     }
 
+    public void RenderOccluders()
+    {
+        Raylib.BeginTextureMode(occlusionTexture);
+        Raylib.ClearBackground(Color.Black); // black = no occlusion (light passes)
+
+        Camera2D cam = CameraSystem.Instance.GetCamera();
+        Raylib.BeginMode2D(cam);
+
+        // 1) Draw tilemap/level geometry that blocks light as WHITE (opaque)
+        // You should draw simplified rectangles or the actual tile sprites in solid white.
+        // Example (pseudo):
+        foreach (var chunkIndex in WorldGeneration.Instance.visibleChunks)
+        {
+            if (!WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk)) continue;
+            int chunkStartX = chunkIndex.Item1 * Core.CHUNK_SIZE;
+            int chunkStartY = chunkIndex.Item2 * Core.CHUNK_SIZE;
+
+            for (int lx = 0; lx < Core.CHUNK_SIZE; lx++)
+                for (int ly = 0; ly < Core.CHUNK_SIZE; ly++)
+                {
+                    int gx = chunkStartX + lx;
+                    int gy = chunkStartY + ly;
+                    var key = (gx, gy);
+                    if (chunk.tileMap.TryGetValue(key, out var tile) && tile.blocksLight)
+                    {
+                        float wx = gx * Core.UNIT_SIZE;
+                        float wy = gy * Core.UNIT_SIZE;
+                        // Draw a white rect representing the solid tile
+                        Raylib.DrawRectangle((int)wx, (int)wy, Core.UNIT_SIZE, Core.UNIT_SIZE, Color.White);
+                    }
+                    if (chunk.backgroundTileMap.TryGetValue(key, out var bgTile))
+                    {
+                        float wx = gx * Core.UNIT_SIZE;
+                        float wy = gy * Core.UNIT_SIZE;
+
+                        Raylib.DrawRectangle((int)wx, (int)wy, Core.UNIT_SIZE, Core.UNIT_SIZE, Color.White);
+                    }
+                }
+        }
+
+        // 2) Draw parallax background layers that should occlude (if any).
+        // If your parallax background is a sprite, draw it in white where it blocks light.
+        // Example:
+        ParallaxHandler.DrawOcclusionMask(); // implement this to draw blocking parts as white
+
+        Raylib.EndMode2D();
+
+        // Do not draw UI here — UI should be drawn after compositing the godrays
+        Raylib.EndTextureMode();
+    }
+
+    public void RenderGodRaysOcclusion(Vector2 lightScreenPosition)
+    {
+        Raylib.BeginTextureMode(godrayTexture);
+        Raylib.ClearBackground(Color.Black);
+
+        Raylib.BeginShaderMode(godrayOcclusionShader);
+
+        // Normalized light pos [0..1]
+        Vector2 light01 = new(lightScreenPosition.X / godrayTexture.Texture.Width,
+                              lightScreenPosition.Y / godrayTexture.Texture.Height);
+
+        Raylib.SetShaderValue(godrayOcclusionShader, uLightPosLoc, light01, ShaderUniformDataType.Vec2);
+
+        // Control params
+        Raylib.SetShaderValue(godrayOcclusionShader, uExposureLoc, 0.6f, ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(godrayOcclusionShader, uDecayLoc, 0.96f, ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(godrayOcclusionShader, uDensityLoc, 0.9f, ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(godrayOcclusionShader, uWeightLoc, 0.8f, ShaderUniformDataType.Float);
+        int sampleCount = 64;
+        Raylib.SetShaderValue(godrayOcclusionShader, uSamplesLoc, sampleCount, ShaderUniformDataType.Int);
+
+        // Bind input textures
+        Raylib.SetShaderValueTexture(godrayOcclusionShader, uSceneTexLoc, lightingTexture.Texture);
+        Raylib.SetShaderValueTexture(godrayOcclusionShader, uOccTexLoc, occlusionTexture.Texture);
+
+        // Draw scene in shader
+        Raylib.DrawTexturePro(
+            lightingTexture.Texture,
+            new Rectangle(0, 0, lightingTexture.Texture.Width, -lightingTexture.Texture.Height),
+            new Rectangle(0, 0, godrayTexture.Texture.Width, godrayTexture.Texture.Height),
+            Vector2.Zero,
+            0f,
+            Color.White
+        );
+
+        Raylib.EndShaderMode();
+        Raylib.EndTextureMode();
+    }
+
+    public void RenderAll()
+    {
+        ComputeLighting();
+        RenderLightingTexture();
+        RenderOccluders();
+        Vector2 sunScreenPos = DayNightSystem.Instance.GetSunScreenPosition(); // implement to return pixel coord
+        Vector2 sunForShader = new(sunScreenPos.X, DayNightSystem.Instance.sunRenderTexture.Texture.Height - sunScreenPos.Y);
+        RenderGodRaysOcclusion(sunForShader);
+        DayNightSystem.Instance.RenderSun();
+
+        PerformKawaseRenderPass();
+    }
 }

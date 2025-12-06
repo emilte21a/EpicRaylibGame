@@ -170,3 +170,10 @@ c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\obj\D
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\obj\Debug\net8.0\NewGame.pdb
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\obj\Debug\net8.0\NewGame.genruntimeconfig.cache
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\obj\Debug\net8.0\ref\NewGame.dll
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\fuelslotframe.png
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\parallaxlayer1.png
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\inputslotframe.png
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\parallaxlayer2.png
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\bright_pass.fs
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays.fs
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays_occlusion.fs

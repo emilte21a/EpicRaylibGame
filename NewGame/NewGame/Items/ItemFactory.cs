@@ -12,34 +12,6 @@ public static class ItemFactory
         itemDataDict = items.ToDictionary(i => i.id, i => i);
     }
 
-    // public static Item CreateItem(short id)
-    // {
-    //     if (!itemDataDict.TryGetValue(id, out var data))
-    //         throw new Exception($"Item id {id} not found!");
-
-    //     var recipe = new Dictionary<Item, int>();
-    //     if (data.recipe != null)
-    //     {
-    //         foreach (var kvp in data.recipe)
-    //         {
-    //             var ingredientItem = CreateItem(kvp.Key);
-    //             recipe[ingredientItem] = kvp.Value;
-    //         }
-    //     }
-
-    //     var texture = TextureManager.LoadTexture(data.texturePath);
-
-    //     return new Item
-    //     {
-    //         ID = data.id,
-    //         name = data.name,
-    //         description = data.description,
-    //         recipe = recipe,
-    //         texture = texture,
-    //         placeable = data.placeable
-    //     };
-    // }
-
     public static DroppedItem CreateDroppedItem(short id, Vector2 position)
     {
         Item item = CreateItem(id);
@@ -107,6 +79,29 @@ public static class ItemFactory
         item.placeable = data.placeable;
 
         return item;
+    }
+
+    public static Dictionary<short, int> GetRecipeFromItemID(short itemID)
+    {
+        if (itemDataDict == null)
+            throw new Exception("Item data not loaded.");
+
+        if (itemDataDict.TryGetValue(itemID, out var data) && data.recipe != null)
+            return new Dictionary<short, int>(data.recipe);
+
+        return new Dictionary<short, int>();
+    }
+
+    public static ItemData? GetitemFromItemID(short itemID)
+    {
+        if (itemDataDict == null)
+            return null;
+
+        if (itemDataDict.TryGetValue(itemID, out var data))
+            return data;
+
+        else
+            return null;
     }
 
     private static Tool CreateTool(ItemData data, Texture2D texture, Dictionary<Item, int> recipe)

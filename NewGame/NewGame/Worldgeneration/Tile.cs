@@ -13,15 +13,18 @@ public abstract class Tile : GameObject
     public bool canBeDestroyed = true;
     public float hitsRequired = 5;
 
-    //ID to drop amount
     public Dictionary<short, int> itemIdsDropAmounts;
     public short dropItemId;
+    public short tileId;
     private int dropAmount = 1;
+    public virtual bool IsMultiTilePart => false;
 
     public override void Start()
     {
         base.Start();
-        itemIdsDropAmounts = new Dictionary<short, int>();
+        TileFactory.AddTileToTileFactory(this);
+        
+        itemIdsDropAmounts = [];
         tag = "Tile";
         AddComponent<Collider>();
         AddComponent<Renderer>();
@@ -106,7 +109,6 @@ public abstract class Tile : GameObject
     {
         return this;
     }
-
 }
 
 public class GrassTile : Tile
@@ -116,6 +118,8 @@ public class GrassTile : Tile
         base.Start();
         tileType = "GrassTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.grass, 1);
+        tileId = (short)TileFactory.TileID.grass;
+        TileFactory.RegisterTileType<GrassTile>(tileId);
         color = Color.DarkGreen;
         renderer.sprite = TextureManager.LoadTexture("Textures/grass.png");
         hitsRequired = 3;
@@ -129,6 +133,8 @@ public class StoneTile : Tile
         base.Start();
         tileType = "StoneTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.stone, 1);
+        tileId = (short)TileFactory.TileID.stone;
+        TileFactory.RegisterTileType<StoneTile>(tileId);
         color = Color.DarkGray;
         renderer.sprite = TextureManager.LoadTexture("Textures/stone.png");
     }
@@ -141,6 +147,8 @@ public class DirtTile : Tile
         base.Start();
         tileType = "DirtTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.dirt, 1);
+        tileId = (short)TileFactory.TileID.dirt;
+        TileFactory.RegisterTileType<DirtTile>(tileId);
         color = Color.DarkBrown;
         renderer.sprite = TextureManager.LoadTexture("Textures/dirt.png");
         hitsRequired = 3;
@@ -152,6 +160,8 @@ public class BackgroundTile : Tile
     public override void Start()
     {
         tag = "Tile";
+        tileId = (short)TileFactory.TileID.background;
+        TileFactory.RegisterTileType<BackgroundTile>(tileId);
         AddComponent<Collider>();
         AddComponent<Renderer>();
         collider = GetComponentFast<Collider>();
@@ -204,6 +214,8 @@ public class Torch : Tile
 
         tileType = "Torch";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.torch, 1);
+        tileId = (short)TileFactory.TileID.torch;
+        TileFactory.RegisterTileType<Torch>(tileId);
         color = new Raylib_cs.Color(254, 216, 177);
         isSolid = false;
         hitsRequired = 1;
@@ -253,6 +265,8 @@ public class CopperOreTile : OreTile
         base.Start();
         tileType = "CopperOreTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.copperore, Random.Shared.Next(1, 5));
+        tileId = (short)TileFactory.TileID.copper;
+        TileFactory.RegisterTileType<CopperOreTile>(tileId);
         color = Color.Orange;
         renderer.sprite = TextureManager.LoadTexture("Textures/copperoretile.png");
     }
@@ -264,6 +278,8 @@ public class SilverOreTile : OreTile
         base.Start();
         tileType = "SilverOreTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.silverore, Random.Shared.Next(1, 3));
+        tileId = (short)TileFactory.TileID.silver;
+        TileFactory.RegisterTileType<SilverOreTile>(tileId);
         color = Color.LightGray;
         renderer.sprite = TextureManager.LoadTexture("Textures/silveroretile.png");
     }
@@ -275,6 +291,8 @@ public class CoalOreTile : OreTile
         base.Start();
         tileType = "CoalOreTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.coalore, Random.Shared.Next(2, 4));
+        tileId = (short)TileFactory.TileID.coal;
+        TileFactory.RegisterTileType<CoalOreTile>(tileId);
         color = Color.Black;
         renderer.sprite = TextureManager.LoadTexture("Textures/coaloretile.png");
     }
@@ -300,12 +318,14 @@ public class MultiTilePart : Tile
     public MultiTile parent;
     public int offsetX;
     public int offsetY;
+    public override bool IsMultiTilePart => true;
     public MultiTilePart(MultiTile parent, int offX, int offY)
     {
         this.parent = parent;
         offsetX = offX;
         offsetY = offY;
         canBeDestroyed = false;
+        isSolid = parent.isSolid;
     }
 }
 
@@ -313,14 +333,42 @@ public class InteractableTile : MultiTile
 {
     public UserInterface? userInterface;
 
+    public static InteractableTile? ActiveInteractable;
+
     public override void Start()
     {
         base.Start();
+        isSolid = false;
+    }
+
+    public void ToggleInterface()
+    {
+        if (userInterface == null) return;
+
+        if (userInterface.IsOpen())
+        {
+            userInterface.Close();
+            if (ActiveInteractable == this) ActiveInteractable = null;
+            SlotUtils.RemoveInterface(userInterface);
+            return;
+        }
+
+        if (ActiveInteractable != null && ActiveInteractable != this)
+        {
+            ActiveInteractable.userInterface?.Close();
+            SlotUtils.RemoveInterface(ActiveInteractable.userInterface);
+            ActiveInteractable = null;
+        }
+
+        // open this one
+        userInterface.Open();
+        ActiveInteractable = this;
+        SlotUtils.AddInterface(userInterface);
     }
 
     public virtual void OnInteract()
     {
-
+        ToggleInterface();
     }
 }
 
@@ -349,6 +397,8 @@ public class FurnaceTile : InteractableTile
         collider.isActive = true;
         tileType = "FurnaceTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.furnace, 1);
+        tileId = (short)TileFactory.TileID.furnace;
+        TileFactory.RegisterTileType<FurnaceTile>(tileId);
         color = Color.DarkGray;
         renderer.sprite = TextureManager.LoadTexture("Textures/furnace.png");
         transform.position = new Vector2(
@@ -366,17 +416,7 @@ public class FurnaceTile : InteractableTile
 
     public override void OnInteract()
     {
-        base.OnInteract();
-        if (!userInterface.IsOpen())
-        {
-            userInterface.Open();
-            SlotUtils.AddInterface(userInterface);
-        }
-        else if (userInterface.IsOpen())
-        {
-            userInterface.Close();
-            SlotUtils.RemoveInterface(userInterface);
-        }
+        ToggleInterface();
     }
 
     public override void Update()
@@ -400,6 +440,7 @@ public class FurnaceTile : InteractableTile
 
 public class CraftingTableTile : InteractableTile
 {
+    CraftingTableComponent? craftingTableComponent;
     public override void OnPlaced(int originTileX, int originTileY)
     {
         base.OnPlaced(originTileX, originTileY);
@@ -415,12 +456,19 @@ public class CraftingTableTile : InteractableTile
         isSolid = false;
         tileType = "CraftingTableTile";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.craftingtable, 1);
+        tileId = (short)TileFactory.TileID.craftingTable;
+        TileFactory.RegisterTileType<CraftingTableTile>(tileId);
         color = Color.Brown;
         renderer.sprite = TextureManager.LoadTexture("Textures/craftingtable.png");
         collider.boxCollider = new Rectangle(transform.position.X, transform.position.Y, Core.UNIT_SIZE * widthInTiles, Core.UNIT_SIZE);
-        // userInterface = new CraftingTableInterface();
-        // var craftingUI = (CraftingTableInterface)userInterface;
-        // craftingUI.ownerTile = this;
+
+        // attach a crafting component and create the UI from it (tier1 as example)
+        AddComponent<CraftingTableComponent>();
+        craftingTableComponent = GetComponent<CraftingTableComponent>();
+        craftingTableComponent.SetupComponent(CraftingTier.tier1);
+        userInterface = new CraftingTableInterface(craftingTableComponent);
+        var craftingUI = (CraftingTableInterface)userInterface;
+        craftingUI.ownerTile = this;
     }
 }
 
@@ -453,6 +501,8 @@ public class TreeTile : MultiTile
         tileType = "TreeTile";
 
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.sapling, Random.Shared.Next(1, 3));
+        tileId = (short)TileFactory.TileID.tree;
+        TileFactory.RegisterTileType<TreeTile>(tileId);
         color = Color.DarkBrown;
         renderer.sprite = TextureManager.LoadTexture("Textures/treestages.png");
         collider.boxCollider = new Rectangle(transform.position.X, transform.position.Y, Core.UNIT_SIZE * widthInTiles, Core.UNIT_SIZE * heightInTiles);

@@ -22,7 +22,8 @@ public sealed class Player : Entity
     float actionTimer = 0;
     bool canPerformAction = true;
 
-    public Inventory inventory = new();
+    public Inventory inventory;
+    public InventoryComponent? inventoryComponent;
 
     Item currentItem;
     InteractableTile? interactableTile;
@@ -40,12 +41,23 @@ public sealed class Player : Entity
     public override void Start()
     {
         base.Start();
-
+        AddComponent<InventoryComponent>();
+        inventoryComponent = GetComponent<InventoryComponent>();
+        inventory = new(inventoryComponent);
         collider.boxCollider.X = transform.position.X;
         collider.boxCollider.Y = transform.position.Y;
         collider.boxCollider.Height *= 2;
         collider.interactableByEntities = false;
         physicsBody.weight = 15;
+    }
+
+    public void SetPlayerPos(Vector2? pos)
+    {
+        if (pos != null)
+            transform.position = (Vector2)pos;
+
+        else
+            transform.position = Vector2.Zero;
     }
 
     public override void Update()
@@ -110,13 +122,13 @@ public sealed class Player : Entity
         }
         if (Raylib.IsKeyPressed(KeyboardKey.O))
         {
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.torch));
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.furnace));
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverPickaxe));
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.coalore));
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.copperore));
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverore));
-            inventory.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.craftingtable));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.torch));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.furnace));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverPickaxe));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.coalore));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.copperore));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverore));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.craftingtable));
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.K))
@@ -247,6 +259,7 @@ public sealed class Player : Entity
                 {
                     Console.WriteLine("Destroyed: " + tile.tag);
                     tile.OnDestruction();
+                    chunk.MarkTileRemoved(tileKey);
                     if (tile is FurnaceTile furnaceTile && furnaceTile.userInterface != null)
                     {
                         furnaceTile.userInterface.Close();
@@ -268,11 +281,17 @@ public sealed class Player : Entity
 
                     collider.UpdateBounds(tile.transform.position);
                     CollisionSystem.Instance.staticSpatialHash.Remove(tile);
-
+                    Game.RemoveGameObject(tile);
                     chunk.RemoveTileAt(tileKey);
 
                     if (chunk.foliageMap.ContainsKey(tileKey))
                         chunk.foliageMap.Remove(tileKey);
+
+                    WorldGeneration.Instance.SaveChunk(chunkIndex);
+                    // if (chunk.treeMap.ContainsKey((tileKey.Item1, tileKey.Item2 - 1)))
+                    // {
+                    //     chunk.treeMap.Remove(tileKey);
+                    // }
                     return;
                 }
             }
@@ -281,7 +300,7 @@ public sealed class Player : Entity
 
     private void HandleItemPickups()
     {
-        if (inventory.IsFull())
+        if (inventoryComponent.IsFull())
             return;
 
         foreach (var obj in CollisionSystem.Instance.dynamicSpatialHash.QueryNearby(this))
@@ -301,7 +320,7 @@ public sealed class Player : Entity
 
                 if (Raylib.CheckCollisionRecs(collider.boxCollider, item.GetComponentFast<Collider>().boxCollider))
                 {
-                    inventory.AddItem(item.item);
+                    inventoryComponent.AddItem(item.item);
                     item.pickedUp = true;
                     Console.WriteLine($"Item {item.item.ID} picked up");
                     break;
@@ -430,10 +449,25 @@ public sealed class Player : Entity
             }
 
             chunk.PlaceMultiTile(multiTilePlaced, finalIndex.tileX, finalIndex.tileY);
+
+            // mark every tile cell of the multi-tile as modified so it persists
+            for (int ox = 0; ox < multiTilePlaced.widthInTiles; ox++)
+            {
+                for (int oy = 0; oy < multiTilePlaced.heightInTiles; oy++)
+                {
+                    var partIndex = (finalIndex.tileX + ox, finalIndex.tileY + oy);
+                    if (chunk.tileMap.TryGetValue(partIndex, out var placedPart) && placedPart != null)
+                    {
+                        chunk.MarkTileModified(partIndex, placedPart);
+                    }
+                }
+            }
         }
         else
         {
             chunk.tileMap[finalIndex] = tile;
+            // mark single-tile placement
+            chunk.MarkTileModified(finalIndex, tile);
         }
 
         if (tile is TreeTile tree)
@@ -441,13 +475,17 @@ public sealed class Player : Entity
             tree.ResetAge();
         }
 
-        inventory.DecreaseItemAmount(currentItem);
+        inventoryComponent!.DecreaseItemAmount(currentItem, 1);
 
+        // ensure transform + collisions are set before saving
         tile.transform.position = tileWorldPos;
-
         var tileCollider = tile.GetComponentFast<Collider>();
         tileCollider?.UpdateBounds(tile.transform.position);
         CollisionSystem.Instance.staticSpatialHash.Insert(tile);
+
+        // Persist changes to disk immediately (safe small IO). Use WorldGeneration helper.
+        var chunkIndexLocal = chunkIndex; // capture
+        WorldGeneration.Instance.SaveChunk(chunkIndexLocal);
     }
 
     private void HandleInteractableTile()
@@ -504,137 +542,6 @@ public sealed class Player : Entity
     {
         return interactableTile;
     }
-
-    // public void DrawHoveringTile()
-    // {
-    //     if (currentItem == null || !currentItem.placeable)
-    //         return;
-
-    //     Vector2 mousePos = CameraSystem.Instance.GetMouseWorldPosition();
-    //     int tileX = (int)MathF.Floor(mousePos.X / Core.UNIT_SIZE);
-    //     int tileY = (int)MathF.Floor(mousePos.Y / Core.UNIT_SIZE);
-    //     Vector2 tileWorldPos = new Vector2(tileX * Core.UNIT_SIZE, tileY * Core.UNIT_SIZE);
-
-    //     int chunkWidthUnits = WorldGeneration.Instance.chunkSize * Core.UNIT_SIZE;
-    //     (int, int) chunkIndex = (
-    //         (int)MathF.Floor(tileX * Core.UNIT_SIZE / (float)chunkWidthUnits),
-    //         (int)MathF.Floor(tileY * Core.UNIT_SIZE / (float)chunkWidthUnits)
-    //     );
-
-    //     if (!WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk))
-    //         return;
-
-    //     Tile tile = ItemFactory.CreateTileFromItem(currentItem, tileWorldPos);
-    //     var renderer = tile.GetComponentFast<Renderer>();
-    //     if (renderer == null || renderer.sprite.Id == 0)
-    //         return;
-
-    //     bool canPlace = true;
-    //     bool hasSupport = false;
-    //     bool snapped = false;
-    //     int finalTileY = tileY;
-
-    //     var tileIndex = (tileX, tileY);
-    //     if (chunk.tileMap.TryGetValue(tileIndex, out Tile? existing) &&
-    //         existing != null && existing is not BackgroundTile)
-    //         canPlace = false;
-
-    //     var belowIndex = (tileX, tileY + 1);
-    //     var aboveIndex = (tileX, tileY - 1);
-    //     if (chunk.tileMap.TryGetValue(belowIndex, out var belowTile))
-    //     {
-    //         if (belowTile.GetComponent<Collider>()?.isActive == true)
-    //             hasSupport = true;
-
-    //     }
-
-    //     else if (chunk.tileMap.TryGetValue(aboveIndex, out var aboveTile))
-    //     {
-    //         if (aboveTile.GetComponent<Collider>()?.isActive == true)
-    //             hasSupport = true;
-    //     }
-
-    //     var leftIndex = (tileX - 1, tileY);
-    //     var rightIndex = (tileX + 1, tileY);
-
-    //     if (!hasSupport)
-    //     {
-    //         if (chunk.tileMap.TryGetValue(leftIndex, out var leftTile))
-    //             if (leftTile.GetComponent<Collider>()?.isActive == true)
-    //                 hasSupport = true;
-
-    //         if (chunk.tileMap.TryGetValue(rightIndex, out var rightTile))
-    //             if (rightTile.GetComponent<Collider>()?.isActive == true)
-    //                 hasSupport = true;
-    //     }
-
-    //     if (tile is MultiTile multiTile)
-    //     {
-    //         for (int y = tileY; y < tileY + 20; y++)
-    //         {
-    //             var below = (tileX, y + 1);
-    //             if (chunk.tileMap.TryGetValue(below, out var solidBelow))
-    //             {
-    //                 if (solidBelow.GetComponent<Collider>()?.isActive == true)
-    //                 {
-    //                     finalTileY = y - (multiTile.heightInTiles - 1);
-    //                     snapped = true;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         if (!snapped)
-    //             canPlace = false;
-    //         else
-    //             hasSupport = true;
-    //     }
-
-    //     if (!hasSupport)
-    //         canPlace = false;
-
-    //     tileWorldPos = new Vector2(tileX * Core.UNIT_SIZE, finalTileY * Core.UNIT_SIZE);
-
-    //     Color tint = canPlace
-    //         ? new Color(255, 255, 255, 120)
-    //         : new Color(255, 100, 100, 150);
-
-    //     int frameWidth = Core.UNIT_SIZE;
-    //     int frameHeight = Core.UNIT_SIZE;
-
-    //     var col = tile.GetComponent<Collider>();
-    //     if (col != null)
-    //     {
-    //         frameWidth = (int)col.boxCollider.Width;
-    //         frameHeight = (int)col.boxCollider.Height;
-    //     }
-
-    //     int totalFrames = Math.Max(1, renderer.sprite.Width / frameWidth);
-
-    //     int frameIndex = 0;
-
-    //     if (totalFrames > 1)
-    //     {
-    //         frameIndex = totalFrames / 2;
-    //     }
-
-    //     var src = new Rectangle(
-    //         frameIndex * frameWidth,
-    //         0,
-    //         frameWidth,
-    //         frameHeight
-    //     );
-
-    //     var dst = new Rectangle(
-    //         tileWorldPos.X,
-    //         tileWorldPos.Y,
-    //         frameWidth,
-    //         frameHeight
-    //     );
-
-    //     Raylib.DrawTexturePro(renderer.sprite, src, dst, Vector2.Zero, 0, tint);
-
-    // }
 
     private int GetLastDirection()
     {

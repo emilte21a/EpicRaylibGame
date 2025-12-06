@@ -35,6 +35,6 @@ public static class ParticlePool
                 ActiveParticles.Add(p);
         }
 
-        Console.WriteLine($"EmitParticles: requested={amount}, activeNow={ActiveParticles.Count}");
+        // Console.WriteLine($"EmitParticles: requested={amount}, activeNow={ActiveParticles.Count}");
     }
 }

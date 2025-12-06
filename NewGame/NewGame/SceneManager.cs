@@ -1,23 +1,57 @@
 public static class SceneManager
 {
-    static readonly Dictionary<SCENE_NAME, Scene> actionsOnScene = new()
+    static readonly Dictionary<SCENE_NAME, Func<Scene>> sceneFactories = new()
     {
-        {SCENE_NAME.SCENE_START, new StartScene()},
-        {SCENE_NAME.SCENE_MAIN, new MainScene()}
-
+        {SCENE_NAME.SCENE_START, ()=> new StartScene()}
     };
 
-    static SCENE_NAME currentScene = SCENE_NAME.SCENE_START;
+    static Scene currentScene;
+
+    // cleanup global/game state when switching scenes to avoid duplicates
+    static void CleanupGlobalStateForSceneChange()
+    {
+        // unload and clear world/chunks
+        try { WorldGeneration.Instance.UnloadAllChunks(); } catch { }
+
+        // clear global references
+        WorldGeneration.Instance.playerRef = null;
+        CollisionSystem.Instance.dynamicSpatialHash.Clear();
+        CollisionSystem.Instance.staticSpatialHash.Clear();
+
+        // clear game lists
+        try { Game.GetGameObjects().Clear(); } catch { }
+        try { Game.GetEntities().Clear(); } catch { }
+
+        // clear active particles
+        try { ParticlePool.ActiveParticles.Clear(); } catch { }
+
+        // reset any UI drag/drop state if you have it
+        try { UIDragContext.Reset(); } catch { }
+    }
+
+    public static void ChangeToMainWithSession(GameSession session)
+    {
+        CleanupGlobalStateForSceneChange();
+        currentScene = new MainScene(session);
+    }
 
     public static void UpdateGame()
     {
-        actionsOnScene[currentScene].Update();
-        actionsOnScene[currentScene].Draw();
+        currentScene?.Update();
+        currentScene?.Draw();
     }
 
     public static void ChangeToScene(SCENE_NAME scene)
     {
-        currentScene = scene;
+        // If switching back to start menu, clean up the current game state
+        CleanupGlobalStateForSceneChange();
+        currentScene = sceneFactories[scene]();
+        System.Console.WriteLine("changed scene to" + scene);
+    }
+
+    public static void Initialize()
+    {
+        ChangeToScene(SCENE_NAME.SCENE_START);
     }
 }
 

@@ -128,7 +128,7 @@ public class CollisionSystem
             for (int y = bounds.minY; y <= bounds.maxY; y++)
             {
                 var tileWorldPos = new Vector2(x * Core.UNIT_SIZE, y * Core.UNIT_SIZE);
-                var tile = WorldGeneration.Instance.GetTileAt(tileWorldPos);
+                var tile = WorldGeneration.Instance.GetTileAtWorldPosition(tileWorldPos);
                 if (tile == null) continue;
 
                 var collider = tile.GetComponentFast<Collider>();
@@ -163,7 +163,7 @@ public class CollisionSystem
                 for (int y = bounds.minY; y <= bounds.maxY; y++)
                 {
                     var tileWorldPos = new Vector2(x * Core.UNIT_SIZE, y * Core.UNIT_SIZE);
-                    var tile = WorldGeneration.Instance.GetTileAt(tileWorldPos);
+                    var tile = WorldGeneration.Instance.GetTileAtWorldPosition(tileWorldPos);
                     if (tile == null) continue;
 
                     var collider = tile.GetComponentFast<Collider>();

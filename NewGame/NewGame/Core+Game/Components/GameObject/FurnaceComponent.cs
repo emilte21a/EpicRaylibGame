@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 public class FurnaceComponent : Component
 {
     public FurnaceSlot? inputSlot;
@@ -11,6 +13,62 @@ public class FurnaceComponent : Component
     public bool active = false;
 
     public float smeltProgressNormalized = 0f;
+
+    // DTO used for saving/loading furnace state
+    public class FurnaceStateDTO
+    {
+        public short inputItemId = -1;
+        public int inputAmount = 0;
+        public short fuelItemId = -1;
+        public int fuelAmount = 0;
+        public short resultItemId = -1;
+        public int resultAmount = 0;
+        public float smeltProgressNormalized = 0f;
+        public float fuelTime = 0f;
+        public bool active = false;
+    }
+
+    public FurnaceStateDTO ToDTO()
+    {
+        var dto = new FurnaceStateDTO();
+        dto.inputItemId = (short)(inputSlot?.itemInSlot?.ID ?? -1);
+        dto.inputAmount = inputSlot?.amount ?? 0;
+        dto.fuelItemId = (short)(fuelSlot?.itemInSlot?.ID ?? -1);
+        dto.fuelAmount = fuelSlot?.amount ?? 0;
+        dto.resultItemId = (short)(resultSlot?.itemInSlot?.ID ?? -1);
+        dto.resultAmount = resultSlot?.amount ?? 0;
+        dto.smeltProgressNormalized = smeltProgressNormalized;
+        dto.fuelTime = fuelTime;
+        dto.active = active;
+        return dto;
+    }
+
+    public void FromDTO(FurnaceStateDTO dto)
+    {
+        // helper to create Item instance without spawning into world
+        Item? item;
+        if (dto.inputItemId >= 0)
+        {
+            item = ItemFactory.CreateDroppedItem(dto.inputItemId, Vector2.Zero)?.item;
+            if (inputSlot != null) { inputSlot.itemInSlot = item; inputSlot.amount = dto.inputAmount; }
+        }
+
+        if (dto.fuelItemId >= 0)
+        {
+            item = ItemFactory.CreateDroppedItem(dto.fuelItemId, Vector2.Zero)?.item;
+            if (fuelSlot != null) { fuelSlot.itemInSlot = item; fuelSlot.amount = dto.fuelAmount; }
+        }
+
+        if (dto.resultItemId >= 0)
+        {
+            item = ItemFactory.CreateDroppedItem(dto.resultItemId, Vector2.Zero)?.item;
+            if (resultSlot != null) { resultSlot.itemInSlot = item; resultSlot.amount = dto.resultAmount; }
+        }
+
+        smeltProgressNormalized = dto.smeltProgressNormalized;
+        fuelTime = dto.fuelTime;
+        active = dto.active;
+    }
 
     public void Update()
     {
