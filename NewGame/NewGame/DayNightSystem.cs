@@ -11,7 +11,7 @@ public class DayNightSystem
     );
 
     public static float TimeScale = 60f;
-    private float timeOfDay = 0;
+    private float timeOfDay = 12;
     public float timePerDay = 24 * TimeScale;
 
     private Vector2 sunPos;

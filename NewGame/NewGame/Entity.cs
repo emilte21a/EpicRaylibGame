@@ -9,6 +9,7 @@ public class Entity : GameObject
     public Collider? collider;
     public override void Start()
     {
+        base.Start();
         AddComponent<PhysicsBody>();
         AddComponent<Collider>();
         physicsBody = GetComponent<PhysicsBody>();
@@ -23,6 +24,7 @@ public class Entity : GameObject
 
     public override void Update()
     {
+        base.Update();
         collider.boxCollider.X = transform.position.X;
         collider.boxCollider.Y = transform.position.Y;
         CollisionSystem.Instance.UpdateTileSpatialHashAroundEntity(transform.position);
@@ -30,6 +32,7 @@ public class Entity : GameObject
 
     public override void Draw()
     {
+        base.Draw();
         Raylib.DrawRectangleRec(collider.boxCollider, color);
     }
 

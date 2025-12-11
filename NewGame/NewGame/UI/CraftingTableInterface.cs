@@ -12,8 +12,6 @@ public class CraftingTableInterface : UserInterface, ISlotContainer
     private CraftingRecipe? selectedRecipe = null;
     private int selectedIndex = -1;
 
-    // private ResultSlot resultSlot = new ResultSlot(null);
-
     private Rectangle recipeListRect;
     private Rectangle recipeItemRect;
     private Rectangle ingredientRect;
@@ -22,9 +20,7 @@ public class CraftingTableInterface : UserInterface, ISlotContainer
 
     Dictionary<CraftingRecipe, ResultSlot> craftingSlotsToResult = [];
 
-
     public IEnumerable<Slot> Slots => craftingSlots.Cast<Slot>().Concat(craftingSlotsToResult.Values);
-
 
     public CraftingTableInterface(CraftingTableComponent component)
     {
@@ -39,11 +35,11 @@ public class CraftingTableInterface : UserInterface, ISlotContainer
             craftingSlotsToResult.Add(cs.craftingRecipe, new ResultSlot(null));
         }
 
-        recipeListRect = new Raylib_cs.Rectangle(interactionPanel.X + 10, interactionPanel.Y + 10, 280, interactionPanel.Height - 20);
-        recipeItemRect = new Raylib_cs.Rectangle(recipeListRect.X + 8, recipeListRect.Y + 8, Core.UI_SLOTSIZE, Core.UI_SLOTSIZE);
-        ingredientRect = new Raylib_cs.Rectangle(recipeListRect.X + recipeListRect.Width + 20, interactionPanel.Y + 10, 360, 200);
-        resultSlotRect = new Raylib_cs.Rectangle(ingredientRect.X, ingredientRect.Y + ingredientRect.Height + 20, Core.UI_SLOTSIZE, Core.UI_SLOTSIZE);
-        craftButtonRect = new Raylib_cs.Rectangle(resultSlotRect.X + resultSlotRect.Width + 20, resultSlotRect.Y, 120, 40);
+        recipeListRect = new Rectangle(interactionPanel.X + 10, interactionPanel.Y + 10, 280, interactionPanel.Height - 20);
+        recipeItemRect = new Rectangle(recipeListRect.X + 8, recipeListRect.Y + 8, Core.UI_SLOTSIZE, Core.UI_SLOTSIZE);
+        ingredientRect = new Rectangle(recipeListRect.X + recipeListRect.Width + 20, interactionPanel.Y + 10, 360, 200);
+        resultSlotRect = new Rectangle(ingredientRect.X, ingredientRect.Y + ingredientRect.Height + 20, Core.UI_SLOTSIZE, Core.UI_SLOTSIZE);
+        craftButtonRect = new Rectangle(resultSlotRect.X + resultSlotRect.Width + 20, resultSlotRect.Y, 120, 40);
 
 
         foreach (var cfslot in craftingSlotsToResult)
@@ -75,7 +71,7 @@ public class CraftingTableInterface : UserInterface, ISlotContainer
 
         for (int i = 0; i < craftingSlots.Count; i++)
         {
-            var itemRect = new Raylib_cs.Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
+            var itemRect = new Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
             if (Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), itemRect))
             {
                 selectedIndex = i;
@@ -100,7 +96,7 @@ public class CraftingTableInterface : UserInterface, ISlotContainer
         for (int i = 0; i < craftingSlots.Count; i++)
         {
             var r = craftingSlots[i].craftingRecipe;
-            var itemRect = new Raylib_cs.Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
+            var itemRect = new Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
             craftingSlots[i].Draw();
             // Raylib.DrawRectangleRec(itemRect, bg);
 

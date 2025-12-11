@@ -21,9 +21,8 @@ public class DroppedItem : Entity
         collider.isTrigger = false;
         collider.interactableByEntities = false;
         physicsBody.useGravity = true;
-        float result = transform.position.X - WorldGeneration.Instance.playerRef.transform.position.X;
-        result = Math.Clamp(result, 0, 1);
-        physicsBody.velocity = new Vector2(result, Random.Shared.Next(-8, -5));
+
+        physicsBody.velocity = new Vector2(Random.Shared.Next(-10, 10), -20);
         physicsBody.weight = 5;
     }
 

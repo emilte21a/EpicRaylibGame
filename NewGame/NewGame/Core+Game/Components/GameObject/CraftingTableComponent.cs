@@ -6,12 +6,12 @@ public class CraftingTableComponent : Component
 {
     public ResultSlot? resultSlot = null;
     public CraftingTier craftingTier;
-    public List<CraftingRecipe> availableRecipes = new List<CraftingRecipe>();
+    public List<CraftingRecipe> availableRecipes = [];
 
     public void SetupComponent(CraftingTier tier)
     {
         craftingTier = tier;
-        availableRecipes = CraftingRecipes.craftingRecipes.Where(r => r.craftingTier <= tier).ToList();
+        availableRecipes = [.. CraftingRecipes.craftingRecipes.Where(r => r.craftingTier <= tier)];
     }
 
     public bool CanCraft(CraftingRecipe recipe, InventoryComponent inv)

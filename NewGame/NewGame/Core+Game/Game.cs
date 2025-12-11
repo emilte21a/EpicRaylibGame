@@ -31,6 +31,7 @@ public class Game
         Raylib.SetConfigFlags(ConfigFlags.AlwaysRunWindow);
         // Raylib.ToggleFullscreen();
         Raylib.SetExitKey(KeyboardKey.Null);
+        Raylib.HideCursor();
         // LightingSystem.Instance.EnsureRenderTextureSize();
 
         windowWidth = Raylib.GetScreenWidth();
@@ -38,6 +39,7 @@ public class Game
 
         screenRectangle = new Rectangle(0, 0, screenWidth, screenHeight);
         SceneManager.Initialize();
+       
     }
 
     public void Run()
@@ -49,6 +51,7 @@ public class Game
 
             if (!paused)
                 SceneManager.UpdateGame();
+
         }
 
         // Raylib.CloseWindow();

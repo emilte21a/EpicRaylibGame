@@ -39,6 +39,7 @@ public static class SceneManager
     {
         currentScene?.Update();
         currentScene?.Draw();
+       
     }
 
     public static void ChangeToScene(SCENE_NAME scene)

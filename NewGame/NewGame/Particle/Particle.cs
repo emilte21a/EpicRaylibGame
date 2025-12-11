@@ -11,6 +11,7 @@ public class Particle : GameObject
     public void Init(Vector2 position, Vector2 velocity, float lifetime, float size, int brightness)
     {
         transform.position = position;
+        
         this.velocity = velocity;
         this.lifetime = lifetime;
         age = 0;
@@ -25,7 +26,7 @@ public class Particle : GameObject
     {
         if (!isActive) return;
         age += Raylib.GetFrameTime();
-        size -= age / 20f;
+        size -= age / 200f;
         if (age >= lifetime || size <= 0)
         {
             isActive = false;

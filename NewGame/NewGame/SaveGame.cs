@@ -118,7 +118,7 @@ public class GameSession
                 if (col != null && col.isActive)
                     CollisionSystem.Instance.staticSpatialHash.Insert(tile);
 
-                Game.AddGameObjectToGame(tile);
+                // Game.AddGameObjectToGame(tile);
             }
         }
     }

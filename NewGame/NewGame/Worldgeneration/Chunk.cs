@@ -2,6 +2,8 @@ using System;
 using System.Text.Json;
 using System.IO;
 using SharpNoise.Modules;
+using LibNoise.Filter;
+using LibNoise;
 
 public class Chunk
 {
@@ -55,13 +57,22 @@ public class Chunk
     public void Unload()
     {
         foreach (var t in tileMap.Values)
+        {
+            t.shouldBeDestroyed = true;
             CollisionSystem.Instance.staticSpatialHash.Remove(t);
+        }
 
         foreach (var f in foliageMap.Values)
+        {
+            f.shouldBeDestroyed = true;
             CollisionSystem.Instance.staticSpatialHash.Remove(f);
+        }
 
         foreach (var t in treeMap.Values)
+        {
+            t.shouldBeDestroyed = true;
             CollisionSystem.Instance.staticSpatialHash.Remove(t);
+        }
 
         tileMap.Clear();
         foliageMap.Clear();
@@ -90,20 +101,23 @@ public class Chunk
                 continue;
             }
 
-            // Otherwise spawn the correct tile by ID
             Tile tile = TileFactory.CreateTileFromID(dto.TileId, index);
             if (tile == null)
-                System.Console.WriteLine("Tile is null and is not changed");
+                Console.WriteLine("Tile is null and is not changed");
 
-            // if (tile is MultiTilePart) continue;
 
             Vector2 pos = new(index.x * Core.UNIT_SIZE, index.y * Core.UNIT_SIZE);
             tile.transform.position = pos;
 
             tileMap[index] = tile;
 
+            if (tile is MultiTilePart)
+                continue;
+
             if (tile is MultiTile mt)
                 mt.OnPlaced((int)mt.transform.position.X, (int)mt.transform.position.Y);
+
+
 
             // restore component state
             if (dto.ComponentType == "FurnaceComponent")
@@ -130,14 +144,16 @@ public class Chunk
     public float upperLimit = 0;
     public float lowerLimit = 0;
 
-    private const float CAVE_THRESHOLD = 0.15f;
+    private const float CAVE_MIN_THRESHOLD = 0.05f;
+    private const float CAVE_MAX_THRESHOLD = 0.25f;
+    private const float CAVE_TUNNEL_THRESHOLD_MAX = 0.42f;
 
     private const float SURFACE_NOISE_SCALE = 10;
     private const int SURFACE_OFFSET = 30;
 
     Perlin surfaceNoise = new Perlin();
     Perlin caveNoise = new Perlin();
-
+    Perlin caveNoiseOctave = new Perlin();
     int chunkSize = Core.CHUNK_SIZE;
     int chunkHeight;
 
@@ -153,7 +169,7 @@ public class Chunk
     public Chunk(Vector2 position, int seed)
     {
         this.position = position;
-        chunkSeed = seed; // store seed for deterministic decisions
+        chunkSeed = seed;
         leftLimit = position.X;
         rightLimit = position.X + chunkSize * Core.UNIT_SIZE;
         upperLimit = position.Y;
@@ -163,15 +179,17 @@ public class Chunk
 
         surfaceNoise.Frequency = 2f;
         surfaceNoise.Seed = seed;
-        caveNoise.Frequency = 5f;
+        caveNoise.Frequency = 3f;
         caveNoise.Seed = seed;
+        caveNoiseOctave.Frequency = 4.5f;
+        caveNoiseOctave.Seed = seed;
 
         oreNoises = new Perlin[ores.Length];
         for (int i = 0; i < ores.Length; i++)
         {
             oreNoises[i] = new Perlin();
-            oreNoises[i].Seed = seed + i * 100; // offset seed per ore
-            oreNoises[i].Frequency = 2f;     // lower = bigger patches
+            oreNoises[i].Seed = seed + i * 100;
+            oreNoises[i].Frequency = 2f;
         }
 
         GenerateChunk();
@@ -180,55 +198,45 @@ public class Chunk
 
     void GenerateChunk()
     {
-        // x and y are local tile indices within this chunk (0..chunkSize-1)
         for (int x = 0; x < chunkSize; x++)
         {
-            // world X / Y in tile units used for noise sampling
             int worldTileX = (int)((position.X / Core.UNIT_SIZE) + x);
             double nx = worldTileX * 0.01;
 
-            // create a deterministic RNG for this column using chunkSeed and worldTileX
-            // simple combine — you can replace with a better hash if desired
             int rngSeed = chunkSeed ^ (worldTileX * 73856093);
             var rng = new Random(rngSeed);
 
-            // --- surface using Perlin noise mapped to [0..1] and scaled to an amplitude ---
             int surfaceAmplitude = chunkSize * 2;
-            float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0); // [-1,1]
-            float norm = (noiseVal + 1f) * 1f;                     // [0,1]
+            float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0);
+            float norm = (noiseVal + 1f) * 1f;
             int surfaceWorldY = SURFACE_OFFSET + (int)(norm * surfaceAmplitude);
 
-
-            // iterate only the tiles inside this chunk vertically
             for (int localY = 0; localY < chunkSize; localY++)
             {
-                // convert localY to world tile Y
                 int worldTileY = (int)((position.Y / Core.UNIT_SIZE) + localY);
 
-                // Skip everything ABOVE the surface (we only want one surface tile and then solids below)
                 if (worldTileY < surfaceWorldY)
                     continue;
 
                 var index = ((int)((position.X + x * Core.UNIT_SIZE) / Core.UNIT_SIZE), worldTileY);
                 if (tileMap.ContainsKey(index)) continue;
 
-                // noise sample for caves should use world coords
                 double ny = worldTileY * 0.01;
                 float depthNormalized = Math.Clamp((worldTileY - surfaceWorldY) / (float)(chunkHeight - surfaceWorldY), 0f, 1f);
 
-                const float caveBaseChance = 1.9f;
-                const float caveMaxChance = 2.5f;
-                float caveChance = Raymath.Lerp(caveBaseChance, caveMaxChance, depthNormalized);
-
+                const float caveBaseChance = 1.1f;
+                const float caveMaxChance = 1.7f;
+                float caveChance = Raymath.Lerp(caveBaseChance, caveMaxChance, depthNormalized / 2);
                 double caveValue = (caveNoise.GetValue(nx, ny, 0) + 1.0) * 0.5 / caveChance;
 
-                if (caveValue >= CAVE_THRESHOLD)
-                {
-                    // pass rng so foliage/tree decisions are deterministic per column
-                    PlaceSolidTile(x, localY, index, surfaceWorldY, caveValue, rng);
-                }
-                else
+                double caveTunnelNoise = (caveNoiseOctave.GetValue(nx, ny, 0) + 1.0) * 0.5d;
+
+                if (caveValue > CAVE_MIN_THRESHOLD && caveValue < CAVE_MAX_THRESHOLD)
                     PlaceBackgroundTile(x, localY, index, surfaceWorldY);
+                else if (caveTunnelNoise > CAVE_MAX_THRESHOLD && caveTunnelNoise < CAVE_TUNNEL_THRESHOLD_MAX)
+                    PlaceBackgroundTile(x, localY, index, surfaceWorldY);
+                else
+                    PlaceSolidTile(x, localY, index, surfaceWorldY, caveValue, rng);
             }
 
             // Try to place a tree once per column if the surface tile ended up inside this chunk

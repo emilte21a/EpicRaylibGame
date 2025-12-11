@@ -22,7 +22,6 @@ public class LightingSystem
         public LightValue(int r, int g, int b, int total) { this.r = r; this.g = g; this.b = b; this.total = total; }
     }
 
-    // queue node as struct to avoid allocating tuples each enqueue
     private struct LightNode
     {
         public int x, y, light;
@@ -30,14 +29,13 @@ public class LightingSystem
         public LightNode(int x, int y, int light, Color color) { this.x = x; this.y = y; this.light = light; this.color = color; }
     }
 
-    // maps keyed by tile coords -> light info
     private Dictionary<(int x, int y), LightValue> globalLightMap = new Dictionary<(int, int), LightValue>(4096);
     private Dictionary<(int x, int y), Color> computedLightmap = new Dictionary<(int, int), Color>(4096);
 
     // reusable BFS queue
     private Queue<LightNode> bfsQueue = new Queue<LightNode>(8192);
 
-    private const int MAX_QUEUE_SIZE = 60000;
+    private const int MAX_QUEUE_SIZE = 100000;
 
     Shader kawaseShader;
     RenderTexture2D blurA;
@@ -130,11 +128,9 @@ public class LightingSystem
                 {
                     var key = (gx, gy);
 
-                    // stop if tile blocks light
                     if (chunk.tileMap.TryGetValue(key, out var t) && t.blocksLight)
                         break;
 
-                    // add skylight with dimming factor
                     var val = new LightValue(255, 255, 255, (int)skylightBrightness);
                     globalLightMap[key] = val;
                     bfsQueue.Enqueue(new LightNode(gx, gy, (int)skylightBrightness, Color.White));
@@ -142,7 +138,6 @@ public class LightingSystem
             }
         }
 
-        // 2) Emit lights from active particles (cache list & properties)
         var particles = ParticlePool.ActiveParticles;
         for (int i = 0; i < particles.Count; i++)
         {
@@ -159,7 +154,6 @@ public class LightingSystem
             bfsQueue.Enqueue(new LightNode(gx, gy, brightness, color));
         }
 
-        // 3) Propagate lights using BFS (limited by MAX_QUEUE_SIZE)
         while (bfsQueue.Count > 0 && bfsQueue.Count < MAX_QUEUE_SIZE)
         {
             var node = bfsQueue.Dequeue();
@@ -167,7 +161,6 @@ public class LightingSystem
             int light = node.light;
             Color color = node.color;
 
-            // cheap guard
             if (light <= 1) continue;
 
             for (int d = 0; d < 4; d++)
@@ -175,7 +168,6 @@ public class LightingSystem
                 int nx = x + dx[d], ny = y + dy[d];
                 var nkey = (nx, ny);
 
-                // find neighbor chunk quickly
                 int chunkX = (int)MathF.Floor((float)nx / Core.CHUNK_SIZE);
                 int chunkY = (int)MathF.Floor((float)ny / Core.CHUNK_SIZE);
                 var neighborIdx = (chunkX, chunkY);
@@ -183,16 +175,14 @@ public class LightingSystem
                 if (!chunkMap.TryGetValue(neighborIdx, out var neighborChunk))
                     continue;
 
-                // If tile exists and blocks light, apply heavier propagation penalty
                 bool blocks = false;
                 if (neighborChunk.tileMap.TryGetValue(nkey, out var neighborTile) && neighborTile.blocksLight)
                     blocks = true;
 
-                int propagation = blocks ? 10 : 2;
+                int propagation = blocks ? 10 : 1;
                 int newLight = light - propagation;
                 if (newLight <= 0) continue;
 
-                // compare with existing
                 if (!globalLightMap.TryGetValue(nkey, out var cur) || newLight > cur.total)
                 {
                     float factor = newLight / (float)Core.MAX_BRIGHTNESS;
@@ -388,14 +378,11 @@ public class LightingSystem
     public void RenderOccluders()
     {
         Raylib.BeginTextureMode(occlusionTexture);
-        Raylib.ClearBackground(Color.Black); // black = no occlusion (light passes)
+        Raylib.ClearBackground(Color.Black);
 
         Camera2D cam = CameraSystem.Instance.GetCamera();
         Raylib.BeginMode2D(cam);
 
-        // 1) Draw tilemap/level geometry that blocks light as WHITE (opaque)
-        // You should draw simplified rectangles or the actual tile sprites in solid white.
-        // Example (pseudo):
         foreach (var chunkIndex in WorldGeneration.Instance.visibleChunks)
         {
             if (!WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk)) continue;
@@ -412,7 +399,6 @@ public class LightingSystem
                     {
                         float wx = gx * Core.UNIT_SIZE;
                         float wy = gy * Core.UNIT_SIZE;
-                        // Draw a white rect representing the solid tile
                         Raylib.DrawRectangle((int)wx, (int)wy, Core.UNIT_SIZE, Core.UNIT_SIZE, Color.White);
                     }
                     if (chunk.backgroundTileMap.TryGetValue(key, out var bgTile))
@@ -425,14 +411,10 @@ public class LightingSystem
                 }
         }
 
-        // 2) Draw parallax background layers that should occlude (if any).
-        // If your parallax background is a sprite, draw it in white where it blocks light.
-        // Example:
-        ParallaxHandler.DrawOcclusionMask(); // implement this to draw blocking parts as white
+        ParallaxHandler.DrawOcclusionMask();
 
         Raylib.EndMode2D();
 
-        // Do not draw UI here — UI should be drawn after compositing the godrays
         Raylib.EndTextureMode();
     }
 

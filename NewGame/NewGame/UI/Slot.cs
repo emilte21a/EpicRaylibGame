@@ -30,16 +30,6 @@ public abstract class Slot
         {
             isHovered = true;
             color = new Color(0, 0, 0, 200);
-
-            if (Raylib.IsMouseButtonPressed(MouseButton.Left) && itemInSlot != null && !UIDragContext.isDragging)
-            {
-                UIDragContext.originSlot = this;
-                UIDragContext.draggedItem = itemInSlot;
-                UIDragContext.draggedCount = amount;
-                UIDragContext.isDragging = true;
-                itemInSlot = null;
-                amount = 0;
-            }
         }
         else
         {
@@ -50,7 +40,6 @@ public abstract class Slot
 
     public void Draw()
     {
-        // do not draw if owner exists but is closed
         if (owner != null && !owner.IsOpen())
             return;
 

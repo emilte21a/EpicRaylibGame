@@ -16,7 +16,7 @@ public class FurnaceInterface : UserInterface, ISlotContainer
         float panelH = 300;
 
         // center panel inside the game window
-        interactionPanel = new Raylib_cs.Rectangle(
+        interactionPanel = new Rectangle(
             (Game.screenWidth - panelW) / 2,
             (Game.screenHeight - panelH) / 2,
             panelW,
@@ -24,7 +24,7 @@ public class FurnaceInterface : UserInterface, ISlotContainer
         );
 
         // base Y row for slot layout
-        float baseY = interactionPanel.Y + 200;
+        float baseY = interactionPanel.Y + panelH / 2 - Core.UI_SLOTSIZE / 2;
 
         // X positions relative to the panel
         float xFuel = interactionPanel.X + 200;
@@ -39,9 +39,10 @@ public class FurnaceInterface : UserInterface, ISlotContainer
         fuelSlot.inputType = inputType.fuel;
         inputSlot.inputType = inputType.smeltable;
 
-        fuelSlot.owner = this;
-        inputSlot.owner = this;
-        resultSlot.owner = this;
+        foreach (var slot in Slots)
+        {
+            slot.owner = this;
+        }
 
         fuelSlot.SetSlotFrame("Textures/fuelslotframe.png");
         inputSlot.SetSlotFrame("Textures/inputslotframe.png");
@@ -49,6 +50,11 @@ public class FurnaceInterface : UserInterface, ISlotContainer
         SetupAcceptedSlotInputs();
     }
 
+    public override void Start()
+    {
+        base.Start();
+        tag = "Furnace interface";
+    }
 
     public void SetupAcceptedSlotInputs()
     {

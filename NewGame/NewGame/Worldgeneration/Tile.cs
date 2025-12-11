@@ -18,12 +18,13 @@ public abstract class Tile : GameObject
     public short tileId;
     private int dropAmount = 1;
     public virtual bool IsMultiTilePart => false;
+    float whiteOverlayOpacity = 0;
 
     public override void Start()
     {
         base.Start();
         TileFactory.AddTileToTileFactory(this);
-        
+
         itemIdsDropAmounts = [];
         tag = "Tile";
         AddComponent<Collider>();
@@ -52,15 +53,15 @@ public abstract class Tile : GameObject
 
             var origin = new Vector2(dst.Width / 2f, dst.Height / 2f);
 
-            // int cx = (int)(dst.X + origin.X);
-            // int cy = (int)(dst.X + origin.Y);
-
             var src = new Rectangle(0, 0, renderer.sprite.Width, renderer.sprite.Height);
             Raylib.DrawTexturePro(renderer.sprite, src, dst, origin, transform.zRotation, Color.White);
-            // Raylib.DrawRectangleLines((int)(dst.X - origin.X), (int)(dst.Y - origin.Y), (int)dst.Width, (int)dst.Height, Color.Yellow);
-            // Raylib.DrawCircle(cx, cy, 3, Color.Red);
-            // // draw top-left marker
-            // Raylib.DrawCircle((int)dst.X + 2, (int)dst.Y + 2, 2, Color.Blue);
+            if (whiteOverlayOpacity > 0)
+            {
+
+                Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
+                Raylib.DrawRectangle((int)((int)dst.X - origin.X), (int)((int)dst.Y - origin.Y), (int)dst.Width, (int)dst.Height, new Color(255, 255, 255, 255 * whiteOverlayOpacity));
+                Raylib.EndBlendMode();
+            }
         }
         else
             Raylib.DrawRectangleRec(collider.boxCollider, color);
@@ -76,13 +77,17 @@ public abstract class Tile : GameObject
         collider.boxCollider.X = transform.position.X;
         collider.boxCollider.Y = transform.position.Y;
         transform.zRotation = (int)Raymath.Lerp(transform.zRotation, 0, Raylib.GetFrameTime() * 2);
+        whiteOverlayOpacity = Raymath.Lerp(whiteOverlayOpacity, 0, Raylib.GetFrameTime() * 40);
     }
 
     public virtual void OnDestruction()
     {
-        Vector2 particleVelocity = new Vector2(Random.Shared.Next(-1, 1), Random.Shared.Next(-1, 1));
         Vector2 particleOffset = new Vector2(collider.boxCollider.Width / 2f, collider.boxCollider.Height / 2f);
-        ParticlePool.EmitParticles(5, particleVelocity * Random.Shared.Next(10, 30), color, 15, Core.UNIT_SIZE / 6, 0, transform.position, particleOffset);
+        for (int i = 0; i < 20; i++)
+        {
+            Vector2 particleVelocity = new Vector2(Random.Shared.Next(-40, 40), Random.Shared.Next(-40, 40));
+            ParticlePool.EmitParticles(1, particleVelocity, color, 100, Core.UNIT_SIZE / 4, 0, transform.position, particleOffset, true);
+        }
 
         Console.WriteLine("Tile destroyed at " + transform.position);
         foreach (var item in itemIdsDropAmounts)
@@ -103,6 +108,7 @@ public abstract class Tile : GameObject
         int rand = Random.Shared.Next(-20, 20) > 0 ? 20 : -20;
 
         transform.zRotation = rand;
+        whiteOverlayOpacity = 1;
     }
 
     public virtual Tile Clone()
@@ -190,6 +196,7 @@ public class Torch : Tile
         base.Start();
         AddComponent<Animator>();
         animator = GetComponent<Animator>();
+        color = new Color(120, 120, 120, 20);
 
         AddComponent<Lightsource>();
         lightsource = GetComponent<Lightsource>();
@@ -200,23 +207,23 @@ public class Torch : Tile
         particleEmitter = GetComponent<ParticleEmitter>();
         if (particleEmitter != null)
         {
+            particleEmitter.offset = new Vector2(collider.boxCollider.Width / 2, collider.boxCollider.Height / 2 - 5);
             particleEmitter.color = color;
             particleEmitter.particleAmount = 4;
-            particleEmitter.yVelocity = -10;
-            particleEmitter.perlinFrequency = 3;
+            particleEmitter.yVelocity = -15;
+            particleEmitter.perlinFrequency = 2;
             particleEmitter.brightness = Core.MAX_BRIGHTNESS;
-            particleEmitter.particleSpawnDelay = 0.5f;
-            particleEmitter.lifeTime = 2;
-            particleEmitter.size = 3;
+            particleEmitter.particleSpawnDelay = 0.2f;
+            particleEmitter.lifeTime = 300;
+            particleEmitter.size = Core.UNIT_SIZE / 3;
             particleEmitter.ResetCooldown();
         }
-
 
         tileType = "Torch";
         itemIdsDropAmounts.Add((short)ItemFactory.ItemID.torch, 1);
         tileId = (short)TileFactory.TileID.torch;
         TileFactory.RegisterTileType<Torch>(tileId);
-        color = new Raylib_cs.Color(254, 216, 177);
+
         isSolid = false;
         hitsRequired = 1;
         transform.SetZ(2);
@@ -237,24 +244,24 @@ public class Torch : Tile
 
 public class OreTile : Tile
 {
-    // protected ParticleEmitter? particleEmitter;
+    protected ParticleEmitter? particleEmitter;
     public override void Start()
     {
         base.Start();
-        // AddComponent<ParticleEmitter>();
-        // particleEmitter = GetComponent<ParticleEmitter>();
-        // if (particleEmitter != null)
-        // {
-        //     particleEmitter.color = color;
-        //     particleEmitter.particleAmount = 1;
-        //     particleEmitter.yVelocity = Random.Shared.Next(-1, 1);
-        //     particleEmitter.perlinFrequency = 10;
-        //     particleEmitter.brightness = 1;
-        //     particleEmitter.particleSpawnDelay = 7f + Random.Shared.Next(-1, 2);
-        //     particleEmitter.lifeTime = 1;
-        //     particleEmitter.size = 1;
-        //     particleEmitter.ResetCooldown();
-        // }
+        AddComponent<ParticleEmitter>();
+        particleEmitter = GetComponent<ParticleEmitter>();
+        if (particleEmitter != null)
+        {
+            particleEmitter.color = color;
+            particleEmitter.particleAmount = 1;
+            particleEmitter.yVelocity = Random.Shared.Next(-1, 1);
+            particleEmitter.perlinFrequency = 10;
+            particleEmitter.brightness = 1;
+            particleEmitter.particleSpawnDelay = 7f + Random.Shared.Next(-1, 2);
+            particleEmitter.lifeTime = 1;
+            particleEmitter.size = 1;
+            particleEmitter.ResetCooldown();
+        }
     }
 }
 
@@ -360,7 +367,6 @@ public class InteractableTile : MultiTile
             ActiveInteractable = null;
         }
 
-        // open this one
         userInterface.Open();
         ActiveInteractable = this;
         SlotUtils.AddInterface(userInterface);

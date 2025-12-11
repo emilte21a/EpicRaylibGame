@@ -15,7 +15,6 @@ public abstract class GameObject
         _components = [];
         transform = new Transform();
         _components.Add(transform);
-        Game.AddGameObjectToGame(this);
 
         Start();
     }
@@ -53,6 +52,7 @@ public abstract class GameObject
 
     public virtual void Start()
     {
+        Game.AddGameObjectToGame(this);
         _components.ForEach(c => c.Start());
     }
 

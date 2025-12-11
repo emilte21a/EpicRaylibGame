@@ -1,7 +1,26 @@
+using LibNoise.Primitive;
+using SharpNoise.Modules;
+
 public abstract class Scene
 {
+    protected Texture2D cursorTexture = Raylib.LoadTexture("Textures/cursor.png");
     public abstract void Update();
     public abstract void Draw();
+
+    protected void DrawCursor()
+    {
+        Vector2 mousePos = Raylib.GetMousePosition();
+        var dst = new Rectangle(
+                  mousePos.X,
+                  mousePos.Y,
+                  cursorTexture.Width,
+                  cursorTexture.Height
+              );
+
+        var origin = Vector2.Zero;
+        var src = new Rectangle(0, 0, cursorTexture.Width, cursorTexture.Height);
+        Raylib.DrawTexturePro(cursorTexture, src, dst, origin, 0, Color.White);
+    }
 }
 
 public class StartScene : Scene
@@ -128,6 +147,7 @@ public class StartScene : Scene
         var newRect = new Raylib_cs.Rectangle(uiX + 280, 520, 120, 36);
         Raylib.DrawRectangleRec(newRect, Color.LightGray);
         Raylib.DrawText("New Save", (int)newRect.X + 8, (int)newRect.Y + 6, 20, Color.Black);
+        DrawCursor();
 
         Raylib.EndDrawing();
     }
@@ -139,6 +159,7 @@ public class MainScene : Scene
     bool isPaused = false;
     Player player;
     GameSession session;
+    // UIButton uIButton = new UIButton(100, 50, UIElement.PositionOnScreen.MIDDLE, UIElement.PositionOnScreen.MIDDLE, "buton", 10, Color.Black);
 
     public MainScene(GameSession gameSession)
     {
@@ -167,7 +188,7 @@ public class MainScene : Scene
         CameraSystem.Instance.SetTarget(Raymath.Vector2Lerp(CameraSystem.Instance.GetTarget(), player.transform.position, 15 * Raylib.GetFrameTime()));
         DayNightSystem.Instance.Update();
 
-        LightingSystem.Instance.Update();
+        // LightingSystem.Instance.Update();
 
         foreach ((int, int) chunkIndex in WorldGeneration.Instance.visibleChunks)
         {
@@ -194,13 +215,11 @@ public class MainScene : Scene
         foreach (var go in Game.GetGameObjects())
         {
             if (go is not UserInterface ui) continue;
-
+            if (go is UIElement) continue;
             ui.Update();
         }
 
         SlotUtils.Update();
-
-        player.inventory.Update();
 
         var interactable = player.GetInteractableTile();
         if (interactable != null && interactable.userInterface != null && interactable.userInterface.IsOpen())
@@ -214,9 +233,8 @@ public class MainScene : Scene
 
     public override void Draw()
     {
-        LightingSystem.Instance.RenderAll();
+        // LightingSystem.Instance.RenderAll();
         Raylib.BeginTextureMode(CameraSystem.Instance.pixelPerfectTargetTexture);
-        // Raylib.ClearBackground(Color.SkyBlue);
         DayNightSystem.Instance.DrawSkyBackground();
         DayNightSystem.Instance.Draw();
         ParallaxHandler.Draw();
@@ -225,7 +243,7 @@ public class MainScene : Scene
         DrawInOrder();
 
         Raylib.EndMode2D();
-        LightingSystem.Instance.Draw();
+        // LightingSystem.Instance.Draw();
 
         Raylib.EndTextureMode();
 
@@ -253,18 +271,30 @@ public class MainScene : Scene
         var shouldExit = false;
         if (isPaused)
         {
-            bool exitButton = RayGui.GuiButton(new Raylib_CsLo.Rectangle(200, 200, 200, 100), "Save and Exit");
+            bool exitButton = RayGui.GuiButton(new Raylib_CsLo.Rectangle(Game.screenWidth / 2 - 100, Game.screenHeight / 4, 200, 100), "Save and Exit");
             if (exitButton)
             {
                 shouldExit = true;
             }
-            bool shouldGoToMenu = RayGui.GuiButton(new Raylib_CsLo.Rectangle(200, 400, 200, 100), "Save and go to menu");
+            bool shouldGoToMenu = RayGui.GuiButton(new Raylib_CsLo.Rectangle(Game.screenWidth / 2 - 100, Game.screenHeight / 4 * 2f, 200, 100), "Save and go to menu");
             if (shouldGoToMenu)
             {
                 Save();
                 SceneManager.ChangeToScene(SCENE_NAME.SCENE_START);
             }
         }
+        // Raylib.DrawText($"{SlotUtils.hoveredSlot}", 200, 400, 20, Color.White);
+
+        for (int i = 0; i < SlotUtils.GetInterfaces().Count; i++)
+        {
+            Raylib.DrawText($"{SlotUtils.GetInterfaces()[i].tag}", 200, 500 + i * 20, 20, Color.White);
+        }
+        // isOpen: {SlotUtils.GetInterfaces()[i].IsOpen()}
+        Raylib.DrawText($"go count: {Game.GetGameObjects().Count}", 200, 900, 20, Color.White);
+        if (SlotUtils.hoveredSlot != null)
+            Raylib.DrawText($"hoveredSlot: {SlotUtils.hoveredSlot}", 200, 1000, 20, Color.White);
+
+        DrawCursor();
 
         Raylib.DrawFPS(10, 10);
         Raylib.EndDrawing();
@@ -273,31 +303,6 @@ public class MainScene : Scene
             Save();
             Raylib.CloseWindow();
         }
-
-    }
-
-    private void Save()
-    {
-        foreach (var kvp in WorldGeneration.Instance.chunkMap)
-        {
-            var chunkIndex = kvp.Key;
-            var chunk = kvp.Value;
-
-            var list = chunk.modifiedTiles.Select(kvp2 => new GameSaveManager.ChunkLoadedEntryDTO
-            {
-                X = kvp2.Key.x,
-                Y = kvp2.Key.y,
-                Data = kvp2.Value
-            }).ToList();
-
-            session.Save.Chunks[$"({chunkIndex.Item1},{chunkIndex.Item2})"] = list;
-        }
-
-        // Save player position
-        session.Save.PlayerX = player.transform.position.X;
-        session.Save.PlayerY = player.transform.position.Y;
-
-        SaveSystem.Save(session.Save);
     }
 
     public void DrawInOrder()
@@ -308,6 +313,7 @@ public class MainScene : Scene
             {
                 foreach (var tile in chunk.backgroundTileMap.Values)
                 {
+
                     if (tile is MultiTilePart) continue;
 
                     var col = tile.GetComponent<Collider>();
@@ -327,7 +333,7 @@ public class MainScene : Scene
                         tile.Draw();
                     }
                 }
-                Raylib.DrawRectangleLinesEx(new Raylib_cs.Rectangle(chunk.position.X, chunk.position.Y, Core.CHUNK_SIZE * Core.UNIT_SIZE, Core.CHUNK_SIZE * Core.UNIT_SIZE), 1, Color.Green);
+                // Raylib.DrawRectangleLinesEx(new Raylib_cs.Rectangle(chunk.position.X, chunk.position.Y, Core.CHUNK_SIZE * Core.UNIT_SIZE, Core.CHUNK_SIZE * Core.UNIT_SIZE), 1, Color.Green);
             }
         }
 
@@ -348,16 +354,44 @@ public class MainScene : Scene
             if (obj is ParallaxLayer)
                 continue;
 
+            if (obj is UIElement)
+                continue;
+
             obj.Draw();
-            foreach (var item in CollisionSystem.Instance.staticSpatialHash.QueryNearby(obj))
+            // foreach (var item in CollisionSystem.Instance.staticSpatialHash.QueryNearby(obj))
+            // {
+            //     Raylib.DrawRectangleLinesEx(item.GetComponent<Collider>().boxCollider, 1, Color.Yellow);
+            // }
+            // foreach (var item in CollisionSystem.Instance.dynamicSpatialHash.QueryNearby(obj))
+            // {
+            //     Raylib.DrawRectangleLinesEx(item.GetComponent<Collider>().boxCollider, 1, Color.DarkBlue);
+            // }
+        }
+    }
+
+    #region Saving session
+
+    private void Save()
+    {
+        foreach (var kvp in WorldGeneration.Instance.chunkMap)
+        {
+            var chunkIndex = kvp.Key;
+            var chunk = kvp.Value;
+
+            var list = chunk.modifiedTiles.Select(kvp2 => new GameSaveManager.ChunkLoadedEntryDTO
             {
-                Raylib.DrawRectangleLinesEx(item.GetComponent<Collider>().boxCollider, 1, Color.Yellow);
-            }
-            foreach (var item in CollisionSystem.Instance.dynamicSpatialHash.QueryNearby(obj))
-            {
-                Raylib.DrawRectangleLinesEx(item.GetComponent<Collider>().boxCollider, 1, Color.DarkBlue);
-            }
+                X = kvp2.Key.x,
+                Y = kvp2.Key.y,
+                Data = kvp2.Value
+            }).ToList();
+
+            session.Save.Chunks[$"({chunkIndex.Item1},{chunkIndex.Item2})"] = list;
         }
 
+        session.Save.PlayerX = player.transform.position.X;
+        session.Save.PlayerY = player.transform.position.Y;
+
+        SaveSystem.Save(session.Save);
     }
+    #endregion
 }

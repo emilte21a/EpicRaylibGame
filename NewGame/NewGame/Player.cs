@@ -1,10 +1,11 @@
 global using MouseButton = Raylib_cs.MouseButton;
+using System.Diagnostics.CodeAnalysis;
 
 public sealed class Player : Entity
 {
     float movementSpeed = 120;
     float baseMovementSpeed = 100;
-    float jumpPower = 145;
+    float jumpPower = 185;
     float acceleration = 9;
     float friction = 9;
     float maxSpeed = 300;
@@ -22,8 +23,9 @@ public sealed class Player : Entity
     float actionTimer = 0;
     bool canPerformAction = true;
 
-    public Inventory inventory;
+    public InventoryInterface? inventory;
     public InventoryComponent? inventoryComponent;
+    public CraftingTableComponent? craftingTableComponent;
 
     Item currentItem;
     InteractableTile? interactableTile;
@@ -44,11 +46,13 @@ public sealed class Player : Entity
         AddComponent<InventoryComponent>();
         inventoryComponent = GetComponent<InventoryComponent>();
         inventory = new(inventoryComponent);
-        collider.boxCollider.X = transform.position.X;
+        AddComponent<CraftingTableComponent>();
+        craftingTableComponent = GetComponent<CraftingTableComponent>();
+        collider!.boxCollider.X = transform.position.X;
         collider.boxCollider.Y = transform.position.Y;
         collider.boxCollider.Height *= 2;
         collider.interactableByEntities = false;
-        physicsBody.weight = 15;
+        physicsBody!.weight = 15;
     }
 
     public void SetPlayerPos(Vector2? pos)
@@ -106,7 +110,7 @@ public sealed class Player : Entity
         }
         if ((Raylib.IsMouseButtonPressed(MouseButton.Right) || Raylib.IsMouseButtonDown(MouseButton.Right)) && canPerformAction && !UIDragContext.isDragging)
         {
-            HandleItemPlacing();
+            HandleTilePlacing();
         }
 
         HandleItemPickups();
@@ -305,10 +309,12 @@ public sealed class Player : Entity
 
         foreach (var obj in CollisionSystem.Instance.dynamicSpatialHash.QueryNearby(this))
         {
+            if (inventoryComponent.IsFull()) break;
             if (obj is not DroppedItem item) continue;
 
             if (!item.CanBePickedUp || item.pickedUp)
                 continue;
+
 
             if (Vector2.Distance(transform.position, item.transform.position) < pickupDistance * Core.UNIT_SIZE)
             {
@@ -335,7 +341,7 @@ public sealed class Player : Entity
         }
     }
 
-    private void HandleItemPlacing()
+    private void HandleTilePlacing()
     {
         if (currentItem == null || !currentItem.placeable || inventory.isHovering)
             return;
@@ -358,8 +364,10 @@ public sealed class Player : Entity
 
         var existing = WorldGeneration.Instance.GetTileAtTileCoordinate(tileIndex);
 
-        if (existing != null && existing is not BackgroundTile)
+        if (existing != null)
             return;
+
+
 
         bool hasSupport = false;
 
@@ -397,6 +405,9 @@ public sealed class Player : Entity
                     hasSupport = true;
             }
         }
+
+        if (chunk.backgroundTileMap.TryGetValue(tileIndex, out BackgroundTile? value) && value != null)
+            hasSupport = true;
 
         int finalTileY = tileY;
         bool snapped = false;
@@ -526,7 +537,7 @@ public sealed class Player : Entity
             float d = Raymath.Vector2Distance(transform.position, interactableTile.transform.position);
             if (d > maxDist)
             {
-                if (interactableTile.userInterface.IsOpen())
+                if (interactableTile.userInterface!.IsOpen())
                     interactableTile.userInterface.Close();
                 interactableTile = null;
             }

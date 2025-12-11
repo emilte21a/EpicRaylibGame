@@ -13,7 +13,7 @@ public class WorldGeneration
 
     public int seed;
 
-    private int generationDistance = 6;
+    private int generationDistance = 3;
 
     public List<(int, int)> visibleChunks = [];
 
@@ -35,7 +35,7 @@ public class WorldGeneration
         else
         {
             seed = Random.Shared.Next(-10000, 10000);
-            System.Console.WriteLine("initial seed is null and is given a new one: " + seed);
+            Console.WriteLine("initial seed is null and is given a new one: " + seed);
         }
 
         InitializeChunks(7);
@@ -173,6 +173,7 @@ public class WorldGeneration
         var chunkRows = chunkMap.Keys
                         .Where(k => k.Item1 == chunkX)
                         .Select(k => k.Item2)
+                        .Where(k => k < 20)
                         .Distinct()
                         .OrderBy(y => y)
                         .ToList();
@@ -202,7 +203,7 @@ public class WorldGeneration
             }
         }
 
-        return false; 
+        return false;
     }
 
     public void SaveChunk((int, int) chunkIndex)
@@ -216,14 +217,14 @@ public class WorldGeneration
 
             foreach (var kv in chunk.modifiedTiles)
             {
-                var tileKey = kv.Key; 
-                var dto = kv.Value;  
+                var tileKey = kv.Key;
+                var dto = kv.Value;
 
                 var entry = new GameSaveManager.ChunkLoadedEntryDTO
                 {
                     X = tileKey.Item1,
                     Y = tileKey.Item2,
-                    Data = new Chunk.ModifiedTileDTO() 
+                    Data = new Chunk.ModifiedTileDTO()
                     {
                         TileId = dto.TileId,
                         ComponentType = dto.ComponentType,

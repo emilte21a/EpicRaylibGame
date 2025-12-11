@@ -177,3 +177,5 @@ c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\D
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\bright_pass.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays_occlusion.fs
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\shining_material.fs
+c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\cursor.png

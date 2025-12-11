@@ -19,22 +19,18 @@ public static class ParticlePool
         inactive.Push(p);
     }
 
-    public static void EmitParticles(int amount, Vector2 velocity, Color color, float lifeTime, int size, int brightness, Vector2 position, Vector2 offset)
+    public static void EmitParticles(int amount, Vector2 velocity, Color color, float lifeTime, int size, int brightness, Vector2 position, Vector2 offset, bool randomVelocity)
     {
         for (int i = 0; i < amount; i++)
         {
             var p = GetParticle();
             p.particleColor = color;
 
-            // give each particle a slightly different velocity
-            var v = velocity + new Vector2(Random.Shared.Next(-20, 20), Random.Shared.Next(-20, 20));
+            var v = velocity + (randomVelocity ? new(Random.Shared.Next(-10, 10), Random.Shared.Next(-10, 10)) : Vector2.Zero);
             p.Init(position + offset, v, lifeTime, size, brightness);
 
-            // ensure the pool's active list contains the particle (some pool impls forget to add it)
             if (!ActiveParticles.Contains(p))
                 ActiveParticles.Add(p);
         }
-
-        // Console.WriteLine($"EmitParticles: requested={amount}, activeNow={ActiveParticles.Count}");
     }
 }

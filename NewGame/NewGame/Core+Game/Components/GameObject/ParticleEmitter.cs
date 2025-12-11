@@ -11,10 +11,16 @@ public class ParticleEmitter : Component
     public int brightness = Core.MAX_BRIGHTNESS;
     public float lifeTime = 100;
     public int size = 4;
+    public Vector2 offset;
+
+    public ParticleEmitter()
+    {
+       
+    }
 
     public override void Start()
     {
-        base.Start();
+        base.Start(); 
         ResetCooldown();
     }
 
@@ -24,11 +30,11 @@ public class ParticleEmitter : Component
         if (!CanEmit())
             return;
 
-        EmitParticles(perlinFrequency, yVelocity, particleAmount);
+        EmitParticles(perlinFrequency, yVelocity, particleAmount, true, offset);
         ResetCooldown();
     }
 
-    public void EmitParticles(float perlinFrequency, float yVelocity, int particleAmount)
+    public void EmitParticles(float perlinFrequency, float yVelocity, int particleAmount, bool randomVelocity, Vector2 offset)
     {
         for (int i = 0; i < particleAmount; i++)
         {
@@ -39,11 +45,6 @@ public class ParticleEmitter : Component
                 yVelocity
             );
 
-            Vector2 offset = new Vector2(
-                parent.GetComponent<Collider>().boxCollider.Width / 2f,
-                7
-            );
-
             ParticlePool.EmitParticles(
                 1,
                 velocity,
@@ -51,7 +52,8 @@ public class ParticleEmitter : Component
                 lifeTime, size,
                 brightness,
                 parent.transform.position,
-                offset
+                offset,
+                randomVelocity
             );
         }
     }

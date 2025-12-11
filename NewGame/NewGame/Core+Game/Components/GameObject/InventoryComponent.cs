@@ -30,14 +30,14 @@ public class InventoryComponent : Component
     public override void Update()
     {
         base.Update();
-        foreach (var slot in inventorySlots)
-        {
-            if (slot.amount <= 0)
-            {
-                slot.itemInSlot = null;
-                slot.amount = 0;
-            }
-        }
+        // foreach (var slot in inventorySlots)
+        // {
+        //     if (slot.amount < 0)
+        //     {
+        //         // slot.itemInSlot = null;
+        //         slot.amount = 0;
+        //     }
+        // }
     }
 
     public bool AddItem(Item item)
@@ -108,5 +108,34 @@ public class InventoryComponent : Component
             return 0;
 
         return slot.amount;
+    }
+
+    public int FindFirstEmptyFromOriginIndex(int originIndex)
+    {
+        var index = 0;
+        bool found = false;
+
+        if (originIndex < Core.PLAYER_HOTBAR_SIZE)
+        {
+            for (int i = 0; i < Core.PLAYER_HOTBAR_SIZE; i++)
+            {
+                if (inventorySlots[i] != null) continue;
+
+                index = i;
+                found = true;
+            }
+        }
+        else
+        {
+            for (int i = Core.PLAYER_HOTBAR_SIZE; i < Core.PLAYER_INVENTORY_SIZE; i++)
+            {
+                if (inventorySlots[i] != null) continue;
+
+                index = i;
+                found = true;
+            }
+
+        }
+        return found ? index : originIndex;
     }
 }

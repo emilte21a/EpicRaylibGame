@@ -1,23 +1,33 @@
 
-public class Inventory : UserInterface, ISlotContainer
+public class InventoryInterface : UserInterface, ISlotContainer
 {
     public InventoryComponent inventoryComp;
-    // Expose slots to the generic drop manager
     public IEnumerable<Slot> Slots => inventoryComp.inventorySlots.Cast<Slot>();
 
     public int inventorySize = Core.PLAYER_INVENTORY_SIZE;
-    public int visualInventorySize = Core.PLAYER_INVENTORY_SIZE - 1;
-    public int hotBarLength = 5;
+    public int hotBarLength = Core.PLAYER_HOTBAR_SIZE;
     public bool showTiledInventory = false;
 
     public int hotbarIndex;
 
-    public Inventory(InventoryComponent inventoryComponent)
+    public InventoryInterface(InventoryComponent inventoryComponent)
     {
         inventoryComp = inventoryComponent;
+        foreach (var slot in inventoryComp.inventorySlots)
+        {
+            slot.owner = this;
+        }
         Initialize();
         SlotUtils.AddInterface(this);
         shouldOpen = true;
+    }
+
+    public override void Start()
+    {
+        base.Start();
+        tag = "InventoryInterface";
+
+
     }
 
     public override void Update()
@@ -29,10 +39,10 @@ public class Inventory : UserInterface, ISlotContainer
     public override void Draw()
     {
         Raylib.DrawRectangleRec(interactionPanel, Core.UI_INTERACTION_PANEL_COLOR);
-        for (int i = 0; i < inventoryComp.inventorySlots.Count - 1; i++)
+        for (int i = 0; i < inventoryComp.inventorySlots.Count; i++)
         {
             var slot = inventoryComp.inventorySlots[i];
-            if (slot.index < hotBarLength || (showTiledInventory && slot.index <= visualInventorySize))
+            if (slot.index < hotBarLength || (showTiledInventory && slot.index < inventorySize))
             {
                 slot.Draw();
             }
@@ -45,7 +55,6 @@ public class Inventory : UserInterface, ISlotContainer
         }
         if (SlotUtils.hoveredSlot != null && SlotUtils.hoveredSlot.itemInSlot != null && !string.IsNullOrEmpty(SlotUtils.hoveredSlot.itemInSlot.description))
         {
-            // draw slightly above the slot so it doesn't overlap
             Raylib.DrawText(SlotUtils.hoveredSlot.itemInSlot.description, (int)SlotUtils.hoveredSlot.rectangle.X, (int)SlotUtils.hoveredSlot.rectangle.Y - 20, 20, Color.White);
         }
     }
@@ -95,10 +104,11 @@ public class Inventory : UserInterface, ISlotContainer
 
         for (int i = 0; i < inventorySize; i++)
         {
-            InventorySlot slot = new InventorySlot(null);
-            slot.index = i;
-            // bind slot to this UI
-            slot.owner = this;
+            InventorySlot slot = new(null)
+            {
+                index = i,
+                owner = this
+            };
             inventoryComp.inventorySlots.Add(slot);
         }
 
@@ -139,7 +149,7 @@ public class Inventory : UserInterface, ISlotContainer
         int hotbarY = Raylib.GetScreenHeight() - Core.UI_SLOTSIZE - spacing;
         int tiledStartY = hotbarY - (rows * Core.UI_SLOTSIZE + (rows - 1) * spacing) - spacing;
 
-        for (int i = 0; i < inventorySize - 1; i++)
+        for (int i = 0; i < inventorySize; i++)
         {
             var slot = inventoryComp.inventorySlots[i];
             if (slot.index < hotBarLength)
@@ -166,6 +176,11 @@ public class Inventory : UserInterface, ISlotContainer
         {
             interactionPanel = new Rectangle(startX - spacing / 2, hotbarY - spacing / 2, inventoryWidth + spacing, Core.UI_SLOTSIZE + spacing);
         }
+    }
+
+    public bool IsVisible(int index)
+    {
+        return index < hotBarLength || (showTiledInventory && index < inventorySize);
     }
 }
 

@@ -1,38 +1,296 @@
+using System.ComponentModel.DataAnnotations;
+
 public static class SlotUtils
 {
-    public static InventorySlot? hoveredSlot = null;
+    public static Slot? hoveredSlot = null;
 
     static List<UserInterface> activeInterfaces = [];
 
-    public static bool TryPlaceItemInSlot(Slot targetSlot)
+    public static bool TryPlaceItemInSlot(Slot targetSlot, int amountToDropInSlot)
     {
         Console.WriteLine($"TryPlaceItemInSlot called. target={targetSlot?.GetType().Name}");
 
         if (!UIDragContext.isDragging || UIDragContext.draggedItem == null)
             return false;
 
-        if (targetSlot is InventorySlot invSlot && targetSlot.owner is Inventory invOwner)
+        // Guard against a null target slot (fixes possible null reference diagnostics)
+        if (targetSlot == null)
         {
-            bool isVisible = invSlot.index < invOwner.hotBarLength || (invOwner.showTiledInventory && invSlot.index <= invOwner.visualInventorySize);
-            if (!isVisible)
+            Console.WriteLine("TryPlaceItemInSlot: targetSlot is null -> rejecting drop");
+            UIDragContext.Reset();
+            return false;
+        }
+
+        if (targetSlot is InventorySlot invSlot && targetSlot.owner is InventoryInterface invOwner)
+        {
+            if (!invOwner.IsVisible(invSlot.index))
             {
                 Console.WriteLine("TryPlaceItemInSlot: target inventory slot is not visible -> rejecting drop");
                 return false;
             }
         }
 
-        var draggedItem = UIDragContext.draggedItem;
+        var draggedItem = UIDragContext.draggedItem!;
         var draggedCount = UIDragContext.draggedCount;
         var originSlot = UIDragContext.originSlot;
 
-        if (targetSlot is ResultSlot)
-        {
+        if (!CanPlaceInSlot(targetSlot, draggedItem))
             return false;
-        }
-        if (targetSlot is CraftingSlot)
+
+        if (originSlot == targetSlot)
         {
-            return false;
+            if (originSlot != null && draggedItem != null)
+            {
+                originSlot.itemInSlot = draggedItem;
+                originSlot.amount += amountToDropInSlot;
+                draggedCount -= amountToDropInSlot;
+                UIDragContext.draggedCount = draggedCount;
+            }
+            if (draggedCount <= 0)
+                UIDragContext.Reset();
+            return true;
         }
+
+        Item? tempItem = targetSlot.itemInSlot;
+        int tempAmount = targetSlot.amount;
+
+        if (targetSlot.itemInSlot != null && targetSlot.itemInSlot.ID == draggedItem.ID) // Same item
+        {
+            targetSlot.amount += amountToDropInSlot;
+            if (originSlot != null && originSlot.amount <= 0)
+            {
+                originSlot.itemInSlot = null;
+                originSlot.amount = 0;
+            }
+            UIDragContext.Reset();
+        }
+        else if (targetSlot.itemInSlot == null && originSlot?.itemInSlot != null) //place item in another slot
+        {
+            targetSlot.itemInSlot = draggedItem;
+            targetSlot.amount += amountToDropInSlot;
+            draggedCount -= amountToDropInSlot;
+            UIDragContext.draggedCount = draggedCount;
+            if (draggedCount <= 0)
+                UIDragContext.Reset();
+        }
+        else
+        {
+            targetSlot.itemInSlot = draggedItem;
+            targetSlot.amount += amountToDropInSlot;
+            draggedCount -= amountToDropInSlot;
+            UIDragContext.draggedCount = draggedCount;
+            if (originSlot != null)
+            {
+                originSlot.itemInSlot = tempItem;
+                originSlot.amount += tempAmount;
+            }
+            if (draggedCount <= 0)
+                UIDragContext.Reset();
+        }
+
+        Console.WriteLine($"Placed {targetSlot.itemInSlot?.name} x{targetSlot.amount} into {targetSlot.GetType().Name}");
+        return true;
+    }
+
+    public static void Update()
+    {
+        hoveredSlot = null;
+        foreach (var ui in activeInterfaces)
+        {
+            if (!ui.IsOpen()) continue;
+            ui.Update();
+
+            if (ui is InventoryInterface inventory)
+            {
+                foreach (var slot in inventory.inventoryComp.inventorySlots)
+                {
+                    if (!inventory.IsVisible(slot.index)) continue;
+                    slot.Update();
+                    if (slot.isHovered) hoveredSlot = slot;
+                }
+            }
+            else
+            {
+                if (ui is ISlotContainer slotContainer)
+                {
+                    foreach (var slot in slotContainer.Slots)
+                    {
+                        slot.Update();
+                        if (slot.isHovered) hoveredSlot = slot;
+                    }
+                }
+            }
+
+            ui.isHovering = hoveredSlot != null;
+
+            if (Raylib.IsKeyDown(KeyboardKey.LeftShift) && Raylib.IsMouseButtonPressed(MouseButton.Left))
+            {
+                if (hoveredSlot != null && hoveredSlot.itemInSlot != null)
+                {
+                    if (HandleShiftClick(hoveredSlot))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            if (!UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Left))
+            {
+                HandleLeftClickDrag(ui);
+            }
+            else if (UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Left))
+            {
+                HandleMouseClick(Raylib.GetMousePosition(), UIDragContext.draggedCount);
+            }
+            if (!UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Right))
+            {
+                HandleRightClickDrag(ui);
+            }
+            else if (UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Right))
+            {
+                HandleMouseClick(Raylib.GetMousePosition(), 1);
+            }
+        }
+    }
+
+    static void HandleLeftClickDrag(UserInterface ui)
+    {
+        if (hoveredSlot != null && hoveredSlot.itemInSlot != null && hoveredSlot.owner == ui && ui.IsOpen())
+        {
+            UIDragContext.originSlot = hoveredSlot;
+            UIDragContext.draggedItem = hoveredSlot.itemInSlot;
+            UIDragContext.draggedCount = hoveredSlot.amount;
+            UIDragContext.isDragging = true;
+
+            hoveredSlot.itemInSlot = null;
+            hoveredSlot.amount = 0;
+        }
+    }
+
+    static void HandleRightClickDrag(UserInterface ui)
+    {
+        if (hoveredSlot != null && hoveredSlot.itemInSlot != null && hoveredSlot.owner == ui && ui.IsOpen())
+        {
+            UIDragContext.originSlot = hoveredSlot;
+            UIDragContext.draggedItem = hoveredSlot.itemInSlot;
+            UIDragContext.draggedCount = (int)Math.Ceiling((double)hoveredSlot.amount / 2);
+            UIDragContext.isDragging = true;
+
+            if (hoveredSlot.amount == 1)
+            {
+                hoveredSlot.itemInSlot = null;
+                hoveredSlot.amount = 0;
+            }
+            else
+            {
+                hoveredSlot.amount -= (int)Math.Ceiling((double)hoveredSlot.amount / 2);
+                if (hoveredSlot.amount <= 0)
+                    hoveredSlot = null;
+            }
+        }
+    }
+
+    public static void DrawDraggingSlot()
+    {
+        if (UIDragContext.isDragging && UIDragContext.draggedItem != null)
+        {
+            Vector2 mousePos = Raylib.GetMousePosition();
+            int size = Core.UI_SLOTSIZE;
+            Raylib.DrawTexturePro(
+                UIDragContext.draggedItem.texture,
+                new Rectangle(0, 0, UIDragContext.draggedItem.texture.Width, UIDragContext.draggedItem.texture.Height),
+                new Rectangle(mousePos.X - size / 4, mousePos.Y - size / 4, size / 2, size / 2),
+                Vector2.Zero, 0, Color.White
+            );
+            if (UIDragContext.draggedCount > 0)
+                Raylib.DrawText($"{UIDragContext.draggedCount}", (int)(mousePos.X - 10), (int)(mousePos.Y - 10), 30, Color.White);
+        }
+    }
+
+    public static void HandleMouseClick(Vector2 mousePos, int amount)
+    {
+        if (!UIDragContext.isDragging) return;
+
+        bool placed = false;
+
+        foreach (var go in activeInterfaces)
+        {
+            if (go is ISlotContainer container && container.IsOpen())
+            {
+                if (container is InventoryInterface inv)
+                {
+                    foreach (var slot in inv.Slots.Cast<InventorySlot>())
+                    {
+                        if (!inv.IsVisible(slot.index)) continue;
+
+                        if (Raylib.CheckCollisionPointRec(mousePos, slot.rectangle))
+                        {
+                            if (TryPlaceItemInSlot(slot, amount))
+                            {
+                                placed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var slot in container.Slots)
+                    {
+                        if (Raylib.CheckCollisionPointRec(mousePos, slot.rectangle))
+                        {
+                            if (TryPlaceItemInSlot(slot, amount))
+                            {
+                                placed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (placed) break;
+        }
+
+        if (!placed)
+        {
+            if (UIDragContext.originSlot != null)
+            {
+                TryPlaceItemInSlot(UIDragContext.originSlot, UIDragContext.draggedCount);
+            }
+            else
+            {
+                UIDragContext.Reset();
+            }
+        }
+    }
+
+    public static void AddInterface(UserInterface userInterface)
+    {
+        if (!activeInterfaces.Contains(userInterface))
+            activeInterfaces.Add(userInterface);
+    }
+
+    public static void RemoveInterface(UserInterface userInterface)
+    {
+        activeInterfaces.Remove(userInterface);
+    }
+
+    public static void Clear()
+    {
+        activeInterfaces.Clear();
+    }
+
+    public static List<UserInterface> GetInterfaces()
+    {
+        return activeInterfaces;
+    }
+
+    private static bool CanPlaceInSlot(Slot? targetSlot, Item draggedItem)
+    {
+        if (targetSlot == null) return false;
+
+        if (targetSlot is ResultSlot) return false;
+        if (targetSlot is CraftingSlot) return false;
 
         if (targetSlot is FurnaceSlot)
         {
@@ -52,129 +310,57 @@ public static class SlotUtils
             }
         }
 
-        if (originSlot == targetSlot)
-        {
-            if (originSlot != null && draggedItem != null)
-            {
-                originSlot.itemInSlot = draggedItem;
-                originSlot.amount = draggedCount;
-            }
-            UIDragContext.Reset();
-            return true;
-        }
-
-        Item? tempItem = targetSlot.itemInSlot;
-        int tempAmount = targetSlot.amount;
-
-        if (targetSlot.itemInSlot != null && targetSlot.itemInSlot.ID == draggedItem.ID)
-        {
-            targetSlot.amount += draggedCount;
-            if (originSlot != null)
-            {
-                originSlot.itemInSlot = null;
-                originSlot.amount = 0;
-            }
-        }
-        else
-        {
-            targetSlot.itemInSlot = draggedItem;
-            targetSlot.amount = draggedCount;
-            if (originSlot != null)
-            {
-                originSlot.itemInSlot = tempItem;
-                originSlot.amount = tempAmount;
-            }
-        }
-
-        UIDragContext.Reset();
-        Console.WriteLine($"Placed {targetSlot.itemInSlot?.name} x{targetSlot.amount} into {targetSlot.GetType().Name}");
         return true;
     }
 
-    public static void Update()
+    public static bool HandleShiftClick(Slot originSlot)
     {
-        hoveredSlot = null;
-        Vector2 mousePos = Raylib.GetMousePosition();
+        if (originSlot == null || originSlot.itemInSlot == null)
+            return false;
+
+        var item = originSlot.itemInSlot;
+        int amount = originSlot.amount;
 
         foreach (var ui in activeInterfaces)
         {
             if (!ui.IsOpen()) continue;
+            if (ui is InventoryInterface) continue;
 
-            if (ui is Inventory inventory)
+            if (ui is ISlotContainer container)
             {
-                foreach (var slot in inventory.inventoryComp.inventorySlots)
+                foreach (var slot in container.Slots)
                 {
-                    bool isVisible = slot.index < inventory.hotBarLength || (inventory.showTiledInventory && slot.index <= inventory.visualInventorySize);
-                    if (!isVisible) continue;
-                    slot.Update();
-                    if (slot.isHovered) hoveredSlot = slot;
-                }
-
-            }
-            else
-            {
-                // for other UIs that expose slots via ISlotContainer the UI itself will call slot.Update in its Update()
-            }
-
-            ui.isHovering = hoveredSlot != null;
-
-            if (!UIDragContext.isDragging && Raylib.IsMouseButtonPressed(Raylib_cs.MouseButton.Left))
-            {
-                if (hoveredSlot != null && hoveredSlot.itemInSlot != null && ui.IsOpen())
-                {
-                    UIDragContext.originSlot = hoveredSlot;
-                    UIDragContext.draggedItem = hoveredSlot.itemInSlot;
-                    UIDragContext.draggedCount = hoveredSlot.amount;
-                    UIDragContext.isDragging = true;
-
-                    hoveredSlot.itemInSlot = null;
-                    hoveredSlot.amount = 0;
+                    if (CanPlaceInSlot(slot, item))
+                    {
+                        if (TryPlaceItemInSlot(slot, amount))
+                            return true;
+                    }
                 }
             }
         }
-        if (Raylib.IsMouseButtonReleased(MouseButton.Left))
+
+        foreach (var ui in activeInterfaces)
         {
-            UIDropManager.HandleMouseRelease(Raylib.GetMousePosition());
+            if (ui is InventoryInterface inv && inv.IsOpen())
+            {
+                if (inv.showTiledInventory)
+                {
+                    int emptyIndex = inv.inventoryComp.FindFirstEmptyFromOriginIndex(originSlot is InventorySlot invSlot
+                        ? invSlot.index
+                        : 0);
+
+                    if (emptyIndex >= 0)
+                    {
+                        var target = inv.inventoryComp.inventorySlots[emptyIndex];
+
+                        if (TryPlaceItemInSlot(target, amount))
+                            return true;
+                    }
+                }
+            }
         }
+
+        return false;
     }
 
-    public static void DrawDraggingSlot()
-    {
-        if (UIDragContext.isDragging && UIDragContext.draggedItem != null)
-        {
-            Vector2 mousePos = Raylib.GetMousePosition();
-            int size = Core.UI_SLOTSIZE;
-            Raylib.DrawTexturePro(
-                UIDragContext.draggedItem.texture,
-                new Rectangle(0, 0, UIDragContext.draggedItem.texture.Width, UIDragContext.draggedItem.texture.Height),
-                new Rectangle(mousePos.X - size / 2, mousePos.Y - size / 2, size, size),
-                Vector2.Zero, 0, Color.White
-            );
-
-            if (UIDragContext.draggedCount > 1)
-                Raylib.DrawText($"{UIDragContext.draggedCount}", (int)(mousePos.X + 8), (int)(mousePos.Y + 8), 12, Color.White);
-        }
-    }
-
-    public static void AddInterface(UserInterface userInterface)
-    {
-        if (!activeInterfaces.Contains(userInterface))
-            activeInterfaces.Add(userInterface);
-    }
-
-    public static void RemoveInterface(UserInterface userInterface)
-    {
-        if (activeInterfaces.Contains(userInterface))
-            activeInterfaces.Remove(userInterface);
-    }
-
-    public static void Clear()
-    {
-        activeInterfaces.Clear();
-    }
-
-    public static List<UserInterface> GetInterfaces()
-    {
-        return activeInterfaces;
-    }
 }
