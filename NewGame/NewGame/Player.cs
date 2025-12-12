@@ -16,7 +16,7 @@ public sealed class Player : Entity
     float jumpBufferTime = 0.1f;
     float jumpBufferTimer = 0;
 
-    float pickupDistance = 4;
+    float pickupDistance = 5;
     float interactionRange = 4;
 
     float actionCooldown = 0.2f;
@@ -236,6 +236,15 @@ public sealed class Player : Entity
     {
         if (inventory.isHovering) return;
 
+        if (interactableTile != null)
+        {
+            if (interactableTile.userInterface != null)
+            {
+                if (interactableTile.userInterface.isHovering)
+                    return;
+            }
+        }
+
         Vector2 mouseWorldPos = CameraSystem.Instance.GetMouseWorldPosition();
 
         if (Vector2.Distance(transform.position, mouseWorldPos) > interactionRange * Core.UNIT_SIZE) return;
@@ -322,9 +331,10 @@ public sealed class Player : Entity
                 item.collider.should_NOT_Have_Collisionsbaby = true;
                 float t = MathF.Pow(item.attractProgress, 2);
                 t = MathF.Min(t, 1f);
-                item.transform.position = Vector2.Lerp(item.transform.position, transform.position, t);
+                Vector2 playerPos = transform.position + new Vector2(collider.boxCollider.Width / 2, collider.boxCollider.Height / 2);
+                item.transform.position = Vector2.Lerp(item.transform.position, playerPos, t);
 
-                if (Raylib.CheckCollisionRecs(collider.boxCollider, item.GetComponentFast<Collider>().boxCollider))
+                if (Raymath.Vector2Distance(playerPos, item.transform.position) < Core.UNIT_SIZE)
                 {
                     inventoryComponent.AddItem(item.item);
                     item.pickedUp = true;
@@ -502,12 +512,15 @@ public sealed class Player : Entity
     private void HandleInteractableTile()
     {
         interactableTile = null;
-        float maxDist = 2 * Core.UNIT_SIZE;
+
+        float maxDist = 6 * Core.UNIT_SIZE;
         float bestDist = float.MaxValue;
 
         foreach ((int, int) chunkIndex in WorldGeneration.Instance.visibleChunks)
         {
-            if (!WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk)) continue;
+            if (!WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk))
+                continue;
+
             foreach (var kvp in chunk.tileMap)
             {
                 if (kvp.Value is InteractableTile tile)
@@ -527,19 +540,31 @@ public sealed class Player : Entity
             inventory.showTiledInventory = !inventory.showTiledInventory;
         }
 
+        if (InteractableTile.ActiveInteractable != null)
+        {
+            float activeDist = Raymath.Vector2Distance(
+                transform.position,
+                InteractableTile.ActiveInteractable.transform.position
+            );
+
+            if (activeDist > maxDist)
+            {
+                var ui = InteractableTile.ActiveInteractable.userInterface;
+                if (ui != null && ui.IsOpen())
+                {
+                    ui.Close();
+                    SlotUtils.RemoveInterface(ui);
+                }
+
+                InteractableTile.ActiveInteractable = null;
+            }
+        }
+
         if (interactableTile != null)
         {
-            if (Raylib.IsKeyPressed(Raylib_cs.KeyboardKey.E))
+            if (Raylib.IsKeyPressed(KeyboardKey.E))
             {
                 interactableTile.OnInteract();
-            }
-
-            float d = Raymath.Vector2Distance(transform.position, interactableTile.transform.position);
-            if (d > maxDist)
-            {
-                if (interactableTile.userInterface!.IsOpen())
-                    interactableTile.userInterface.Close();
-                interactableTile = null;
             }
         }
     }

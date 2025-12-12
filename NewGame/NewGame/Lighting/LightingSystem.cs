@@ -179,7 +179,7 @@ public class LightingSystem
                 if (neighborChunk.tileMap.TryGetValue(nkey, out var neighborTile) && neighborTile.blocksLight)
                     blocks = true;
 
-                int propagation = blocks ? 10 : 1;
+                int propagation = blocks ? 10 : 2;
                 int newLight = light - propagation;
                 if (newLight <= 0) continue;
 

@@ -27,7 +27,7 @@ public static class ParallaxHandler
 
     public static void Draw()
     {
-        var cam = CameraSystem.Instance.GetCamera();
+        var cam = CameraSystem.Instance.GetPixelPerfectCamera();
         float cameraX = cam.Target.X;
 
         foreach (var p in parallaxLayers)
@@ -41,7 +41,7 @@ public static class ParallaxHandler
     public static void DrawOcclusionMask()
     {
         Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
-        var cam = CameraSystem.Instance.GetCamera();
+        var cam = CameraSystem.Instance.GetPixelPerfectCamera();
         float cameraX = cam.Target.X;
         foreach (var p in parallaxLayers)
         {

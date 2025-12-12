@@ -83,10 +83,10 @@ public abstract class Tile : GameObject
     public virtual void OnDestruction()
     {
         Vector2 particleOffset = new Vector2(collider.boxCollider.Width / 2f, collider.boxCollider.Height / 2f);
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 10; i++)
         {
             Vector2 particleVelocity = new Vector2(Random.Shared.Next(-40, 40), Random.Shared.Next(-40, 40));
-            ParticlePool.EmitParticles(1, particleVelocity, color, 100, Core.UNIT_SIZE / 4, 0, transform.position, particleOffset, true);
+            ParticlePool.EmitParticles(1, particleVelocity, color, 50, Core.UNIT_SIZE / 5, 0, transform.position, particleOffset, true);
         }
 
         Console.WriteLine("Tile destroyed at " + transform.position);
@@ -196,7 +196,7 @@ public class Torch : Tile
         base.Start();
         AddComponent<Animator>();
         animator = GetComponent<Animator>();
-        color = new Color(120, 120, 120, 20);
+        color = new Color(120, 120, 120, 40);
 
         AddComponent<Lightsource>();
         lightsource = GetComponent<Lightsource>();
@@ -366,7 +366,7 @@ public class InteractableTile : MultiTile
             SlotUtils.RemoveInterface(ActiveInteractable.userInterface);
             ActiveInteractable = null;
         }
-
+        
         userInterface.Open();
         ActiveInteractable = this;
         SlotUtils.AddInterface(userInterface);
@@ -428,6 +428,7 @@ public class FurnaceTile : InteractableTile
     public override void Update()
     {
         base.Update();
+
         furnaceComponent?.Update();
 
         if (furnaceComponent != null && furnaceComponent.active && lightSource != null)

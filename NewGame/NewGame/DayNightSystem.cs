@@ -5,7 +5,11 @@ public class DayNightSystem
         CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Height
     );
 
-    public RenderTexture2D sunBloomTexture = Raylib.LoadRenderTexture(
+    public RenderTexture2D sunBloomTextureA = Raylib.LoadRenderTexture(
+        CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Width,
+        CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Height
+    );
+    public RenderTexture2D sunBloomTextureB = Raylib.LoadRenderTexture(
         CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Width,
         CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Height
     );
@@ -49,7 +53,8 @@ public class DayNightSystem
         Raylib.EndBlendMode();
         Raylib.EndTextureMode();
 
-        LightingSystem.Instance.KawaseBlurPass(sunRenderTexture, sunBloomTexture, 2f);
+        LightingSystem.Instance.KawaseBlurPass(sunRenderTexture, sunBloomTextureA, 2f);
+        LightingSystem.Instance.KawaseBlurPass(sunBloomTextureB, sunBloomTextureB, 2f);
     }
 
     public void DrawSkyBackground()
@@ -120,12 +125,12 @@ public class DayNightSystem
     public void Draw()
     {
         Raylib.DrawTexturePro(sunRenderTexture.Texture,
-        new Raylib_cs.Rectangle(0, 0, sunRenderTexture.Texture.Width, -sunRenderTexture.Texture.Height),
-        new Raylib_cs.Rectangle(0, 0, sunRenderTexture.Texture.Width, sunRenderTexture.Texture.Height), Vector2.Zero, 0, Color.White);
+        new Rectangle(0, 0, sunRenderTexture.Texture.Width, -sunRenderTexture.Texture.Height),
+        new Rectangle(0, 0, sunRenderTexture.Texture.Width, sunRenderTexture.Texture.Height), Vector2.Zero, 0, Color.White);
         Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
-        Raylib.DrawTexturePro(sunBloomTexture.Texture,
-        new Raylib_cs.Rectangle(0, 0, sunBloomTexture.Texture.Width, -sunBloomTexture.Texture.Height),
-        new Raylib_cs.Rectangle(0, 0, sunBloomTexture.Texture.Width, sunBloomTexture.Texture.Height), Vector2.Zero, 0, Color.White);
+        Raylib.DrawTexturePro(sunBloomTextureA.Texture,
+        new Rectangle(0, 0, sunBloomTextureB.Texture.Width, -sunBloomTextureB.Texture.Height),
+        new Rectangle(0, 0, sunBloomTextureB.Texture.Width, sunBloomTextureB.Texture.Height), Vector2.Zero, 0, new Raylib_cs.Color(255,255,255,120));
         Raylib.EndBlendMode();
     }
 

@@ -13,7 +13,7 @@ public class WorldGeneration
 
     public int seed;
 
-    private int generationDistance = 3;
+    private int generationDistance = 2;
 
     public List<(int, int)> visibleChunks = [];
 
@@ -173,7 +173,7 @@ public class WorldGeneration
         var chunkRows = chunkMap.Keys
                         .Where(k => k.Item1 == chunkX)
                         .Select(k => k.Item2)
-                        .Where(k => k < 20)
+                        .Where(k => k < 10)
                         .Distinct()
                         .OrderBy(y => y)
                         .ToList();

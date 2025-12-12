@@ -2,11 +2,11 @@ using LibNoise.Renderer;
 
 public class FurnaceInterface : UserInterface, ISlotContainer
 {
-    public FurnaceSlot fuelSlot = new FurnaceSlot(null);
-    public FurnaceSlot inputSlot = new FurnaceSlot(null);
-    public ResultSlot resultSlot = new ResultSlot(null);
+    public FurnaceSlot fuelSlot = new(null);
+    public FurnaceSlot inputSlot = new(null);
+    public ResultSlot resultSlot = new(null);
     public FurnaceTile ownerTile = null;
-    public IEnumerable<Slot> Slots => [inputSlot, fuelSlot, resultSlot];
+    public IEnumerable<Slot> Slots => new Slot[] { inputSlot, fuelSlot, resultSlot };
 
     public FurnaceInterface()
     {
@@ -69,19 +69,6 @@ public class FurnaceInterface : UserInterface, ISlotContainer
     public override void Update()
     {
         base.Update();
-        foreach (var slot in Slots)
-        {
-            slot.Update();
-        }
-
-        if (Raylib.IsMouseButtonReleased(MouseButton.Left))
-        {
-            Vector2 mousePos = Raylib.GetMousePosition();
-            // if (Raylib.CheckCollisionPointRec(mousePos, fuelSlot.rectangle))
-            //     SlotUtils.TryPlaceItemInSlot(fuelSlot);
-            // else if (Raylib.CheckCollisionPointRec(mousePos, inputSlot.rectangle))
-            //     SlotUtils.TryPlaceItemInSlot(inputSlot);
-        }
     }
 
     public override void Draw()
@@ -100,8 +87,8 @@ public class FurnaceInterface : UserInterface, ISlotContainer
 
         if (ownerTile != null)
         {
-            Vector2 progressBarPosition = new Vector2(inputSlot.rectangle.X + inputSlot.rectangle.Width + 10, inputSlot.rectangle.Y + Core.UI_SLOTSIZE / 2);
-            Vector2 progressBarSize = new Vector2(Core.UI_SLOTSIZE, 10);
+            Vector2 progressBarPosition = new(inputSlot.rectangle.X + inputSlot.rectangle.Width + 10, inputSlot.rectangle.Y + Core.UI_SLOTSIZE / 2);
+            Vector2 progressBarSize = new(Core.UI_SLOTSIZE, 10);
 
             Raylib.DrawRectangleV(progressBarPosition, progressBarSize, Color.DarkGray);
 
@@ -113,8 +100,8 @@ public class FurnaceInterface : UserInterface, ISlotContainer
                 Color.White
             );
 
-            Vector2 fuelBarPosition = new Vector2(fuelSlot.rectangle.X - 20, fuelSlot.rectangle.Y);
-            Vector2 fuelBarSize = new Vector2(10, Core.UI_SLOTSIZE);
+            Vector2 fuelBarPosition = new(fuelSlot.rectangle.X - 20, fuelSlot.rectangle.Y);
+            Vector2 fuelBarSize = new(10, Core.UI_SLOTSIZE);
 
             Raylib.DrawRectangleV(fuelBarPosition, fuelBarSize, Color.Orange);
             Raylib.DrawRectangle(

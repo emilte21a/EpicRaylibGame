@@ -164,7 +164,6 @@ public class MainScene : Scene
     public MainScene(GameSession gameSession)
     {
         session = gameSession;
-        SlotUtils.Clear();
         player = new();
         WorldGeneration.Instance.session = session;
         WorldGeneration.Instance.InitializeSeed(session.Seed);
@@ -185,10 +184,12 @@ public class MainScene : Scene
         CollisionSystem.Instance.Update();
 
         CameraSystem.Instance.Update();
-        CameraSystem.Instance.SetTarget(Raymath.Vector2Lerp(CameraSystem.Instance.GetTarget(), player.transform.position, 15 * Raylib.GetFrameTime()));
+        CameraSystem.Instance.SetTarget(Raymath.Vector2Lerp(CameraSystem.Instance.GetTarget(), player.transform.position, 7 * Raylib.GetFrameTime()));
         DayNightSystem.Instance.Update();
 
-        // LightingSystem.Instance.Update();
+        LightingSystem.Instance.Update();
+
+        SlotUtils.Update();
 
         foreach ((int, int) chunkIndex in WorldGeneration.Instance.visibleChunks)
         {
@@ -212,28 +213,30 @@ public class MainScene : Scene
         foreach (var p in ParticlePool.ActiveParticles.ToList())
             p.Update();
 
-        foreach (var go in Game.GetGameObjects())
-        {
-            if (go is not UserInterface ui) continue;
-            if (go is UIElement) continue;
-            ui.Update();
-        }
+        // foreach (var go in Game.GetGameObjects())
+        // {
+        //     if (go is not UserInterface ui) continue;
+        //     if (go is UIElement) continue;
+        //     ui.Update();
+        // }
 
-        SlotUtils.Update();
 
-        var interactable = player.GetInteractableTile();
-        if (interactable != null && interactable.userInterface != null && interactable.userInterface.IsOpen())
-            interactable.userInterface.Update();
+
+        // var interactable = player.GetInteractableTile();
+        // if (interactable != null && interactable.userInterface != null && interactable.userInterface.IsOpen())
+        //     interactable.userInterface.Update();
 
         Game.GetGameObjects().RemoveAll(go => (go is DroppedItem d && d.pickedUp) || go.shouldBeDestroyed);
         Game.GetEntities().RemoveAll(go => (go is DroppedItem d && d.pickedUp) || go.shouldBeDestroyed);
     }
 
     float zoom = CameraSystem.Instance.GetCamera().Zoom;
+    RenderTexture2D rndtxt = Raylib.LoadRenderTexture(CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Width, CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Height);
+    RenderTexture2D rndtxt2 = Raylib.LoadRenderTexture(CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Width, CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Height);
 
     public override void Draw()
     {
-        // LightingSystem.Instance.RenderAll();
+        LightingSystem.Instance.RenderAll();
         Raylib.BeginTextureMode(CameraSystem.Instance.pixelPerfectTargetTexture);
         DayNightSystem.Instance.DrawSkyBackground();
         DayNightSystem.Instance.Draw();
@@ -243,26 +246,25 @@ public class MainScene : Scene
         DrawInOrder();
 
         Raylib.EndMode2D();
-        // LightingSystem.Instance.Draw();
+        LightingSystem.Instance.Draw();
 
         Raylib.EndTextureMode();
+        LightingSystem.Instance.KawaseBlurPass(CameraSystem.Instance.pixelPerfectTargetTexture, rndtxt, 1.2f);
+        LightingSystem.Instance.KawaseBlurPass(rndtxt, rndtxt2, 1.2f);
 
         Raylib.BeginDrawing();
         Raylib.DrawTexturePro(CameraSystem.Instance.pixelPerfectTargetTexture.Texture, CameraSystem.Instance.sourceRec, CameraSystem.Instance.destRec, Vector2.Zero, 0.0f, Color.White);
+        Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
+        Raylib.DrawTexturePro(rndtxt2.Texture, CameraSystem.Instance.sourceRec, CameraSystem.Instance.destRec, Vector2.Zero, 0, new Color(255, 255, 255, 65));
+        Raylib.EndBlendMode();
+        // zoom = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 100, 100, 10), "Zoom", $"{zoom}", zoom, 0.01f, 2);
+        // CameraSystem.Instance.SetZoom(zoom);
+        // Raylib.DrawText($"{DayNightSystem.Instance.GetCurrentTime() / DayNightSystem.TimeScale}", 50, 400, 20, Color.Black);
+        // DayNightSystem.TimeScale = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 600, 100, 10), "Time Scale", $"{DayNightSystem.TimeScale}", DayNightSystem.TimeScale, 1f, 60f);
 
-        zoom = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 100, 100, 10), "Zoom", $"{zoom}", zoom, 0.01f, 2);
-        CameraSystem.Instance.SetZoom(zoom);
-        Raylib.DrawText($"{DayNightSystem.Instance.GetCurrentTime() / DayNightSystem.TimeScale}", 50, 400, 20, Color.Black);
-        DayNightSystem.TimeScale = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 600, 100, 10), "Time Scale", $"{DayNightSystem.TimeScale}", DayNightSystem.TimeScale, 1f, 60f);
-        DebugMenu.Instance.UpdateDebug();
-
-        player.inventory.Draw();
-
-        // draw any interactable UI that's attached to the player's current tile (keeps it on top)
-        if (player.GetInteractableTile() != null && player.GetInteractableTile().userInterface != null)
+        foreach (var ui in SlotUtils.GetInterfaces())
         {
-            if (player.GetInteractableTile().userInterface.IsOpen())
-                player.GetInteractableTile().userInterface.Draw();
+            ui.Draw();
         }
 
         SlotUtils.DrawDraggingSlot();
@@ -283,16 +285,6 @@ public class MainScene : Scene
                 SceneManager.ChangeToScene(SCENE_NAME.SCENE_START);
             }
         }
-        // Raylib.DrawText($"{SlotUtils.hoveredSlot}", 200, 400, 20, Color.White);
-
-        for (int i = 0; i < SlotUtils.GetInterfaces().Count; i++)
-        {
-            Raylib.DrawText($"{SlotUtils.GetInterfaces()[i].tag}", 200, 500 + i * 20, 20, Color.White);
-        }
-        // isOpen: {SlotUtils.GetInterfaces()[i].IsOpen()}
-        Raylib.DrawText($"go count: {Game.GetGameObjects().Count}", 200, 900, 20, Color.White);
-        if (SlotUtils.hoveredSlot != null)
-            Raylib.DrawText($"hoveredSlot: {SlotUtils.hoveredSlot}", 200, 1000, 20, Color.White);
 
         DrawCursor();
 

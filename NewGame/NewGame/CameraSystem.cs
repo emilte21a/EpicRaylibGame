@@ -6,8 +6,8 @@ public class CameraSystem
     private Vector2 position;
     private Vector2 target;
 
-    public const int virtualScreenWidth = 640;
-    public const int virtualScreenHeight = 360;
+    public const int virtualScreenWidth = 640 / 2;
+    public const int virtualScreenHeight = 360 / 2;
 
     private static float virtualRatio;
 
@@ -36,7 +36,7 @@ public class CameraSystem
         {
             Rotation = 0,
             Target = new Vector2(0, 0),
-            Zoom = 0.8f
+            Zoom = 0.7f
         };
 
         pixelPerfectCamera = new();
@@ -60,11 +60,6 @@ public class CameraSystem
                 );
                 break;
         }
-
-        camera.Target.X = MathF.Round(camera.Target.X);
-        camera.Target.Y = MathF.Round(camera.Target.Y);
-        camera.Offset.X = MathF.Round(camera.Offset.X);
-        camera.Offset.Y = MathF.Round(camera.Offset.Y);
 
         sourceRec = new Rectangle(
             0,

@@ -2,7 +2,7 @@ public abstract class UserInterface : GameObject
 {
     public bool isHovering = false;
     protected Rectangle interactionPanel;
-    protected bool shouldOpen = false;
+    protected bool isOpen = false;
     public override void Start()
     {
         base.Start();
@@ -12,27 +12,25 @@ public abstract class UserInterface : GameObject
     public override void Update()
     {
         base.Update();
-        if (Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), interactionPanel))
-        {
-            isHovering = true;
-        }
+                                  
+        isHovering = Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), interactionPanel);
     }
 
     public void Open()
     {
-        shouldOpen = true;
+        isOpen = true;
         Console.WriteLine("Open interface");
     }
 
     public void Close()
     {
-        shouldOpen = false;
+        isOpen = false;
         Console.WriteLine("Closed Interface");
 
     }
 
     public bool IsOpen()
     {
-        return shouldOpen;
+        return isOpen;
     }
 }

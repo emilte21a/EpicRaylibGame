@@ -18,7 +18,7 @@ public abstract class Slot
 
     public virtual void Update()
     {
-        if (owner != null && !owner.IsOpen())
+        if (owner != null && (!owner.IsOpen() || !owner.isHovering))
         {
             isHovered = false;
             color = Color.Black;

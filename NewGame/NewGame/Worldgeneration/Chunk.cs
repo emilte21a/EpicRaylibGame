@@ -378,7 +378,7 @@ public class Chunk
             }
         }
 
-        parent.Start();
+        // parent.Start();
 
         var parentCol = parent.GetComponentFast<Collider>();
         if (parentCol != null)

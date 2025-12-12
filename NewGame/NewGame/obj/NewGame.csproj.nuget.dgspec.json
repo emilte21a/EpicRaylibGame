@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj": {}
+    "C:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj": {}
   },
   "projects": {
-    "c:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj": {
+    "C:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj",
+        "projectUniqueName": "C:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj",
         "projectName": "NewGame",
-        "projectPath": "c:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj",
+        "projectPath": "C:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\NewGame.csproj",
         "packagesPath": "C:\\Users\\macho\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\obj\\",
+        "outputPath": "C:\\Users\\macho\\OneDrive\\Skrivbord\\CVHemsida\\EpicRaylibGame\\NewGame\\NewGame\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\macho\\AppData\\Roaming\\NuGet\\NuGet.Config"

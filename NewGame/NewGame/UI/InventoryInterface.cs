@@ -19,15 +19,13 @@ public class InventoryInterface : UserInterface, ISlotContainer
         }
         Initialize();
         SlotUtils.AddInterface(this);
-        shouldOpen = true;
+        isOpen = true;
     }
 
     public override void Start()
     {
         base.Start();
         tag = "InventoryInterface";
-
-
     }
 
     public override void Update()

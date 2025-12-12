@@ -31,11 +31,11 @@ public class FurnaceComponent : Component
     public FurnaceStateDTO ToDTO()
     {
         var dto = new FurnaceStateDTO();
-        dto.inputItemId = (short)(inputSlot?.itemInSlot?.ID ?? -1);
+        dto.inputItemId = inputSlot?.itemInSlot?.ID ?? -1;
         dto.inputAmount = inputSlot?.amount ?? 0;
-        dto.fuelItemId = (short)(fuelSlot?.itemInSlot?.ID ?? -1);
+        dto.fuelItemId = fuelSlot?.itemInSlot?.ID ?? -1;
         dto.fuelAmount = fuelSlot?.amount ?? 0;
-        dto.resultItemId = (short)(resultSlot?.itemInSlot?.ID ?? -1);
+        dto.resultItemId = resultSlot?.itemInSlot?.ID ?? -1;
         dto.resultAmount = resultSlot?.amount ?? 0;
         dto.smeltProgressNormalized = smeltProgressNormalized;
         dto.fuelTime = fuelTime;

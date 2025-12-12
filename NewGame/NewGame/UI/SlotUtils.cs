@@ -8,6 +8,7 @@ public static class SlotUtils
 
     public static bool TryPlaceItemInSlot(Slot targetSlot, int amountToDropInSlot)
     {
+        if (!activeInterfaces.Contains(targetSlot.owner)) return false;
         Console.WriteLine($"TryPlaceItemInSlot called. target={targetSlot?.GetType().Name}");
 
         if (!UIDragContext.isDragging || UIDragContext.draggedItem == null)
@@ -106,7 +107,12 @@ public static class SlotUtils
                 {
                     if (!inventory.IsVisible(slot.index)) continue;
                     slot.Update();
-                    if (slot.isHovered) hoveredSlot = slot;
+                    if (slot.isHovered)
+                    {
+                        hoveredSlot = slot;
+                        break;
+                    }
+                    if (hoveredSlot != null) break;
                 }
             }
             else
@@ -116,78 +122,91 @@ public static class SlotUtils
                     foreach (var slot in slotContainer.Slots)
                     {
                         slot.Update();
-                        if (slot.isHovered) hoveredSlot = slot;
+                         if (slot.isHovered)
+                    {
+                        hoveredSlot = slot;
+                        break;
+                    }
+                    if (hoveredSlot != null) break;
                     }
                 }
             }
 
-            ui.isHovering = hoveredSlot != null;
+            // ui.isHovering = hoveredSlot != null;
 
-            if (Raylib.IsKeyDown(KeyboardKey.LeftShift) && Raylib.IsMouseButtonPressed(MouseButton.Left))
+
+            bool left = Raylib.IsMouseButtonPressed(MouseButton.Left);
+            bool right = Raylib.IsMouseButtonPressed(MouseButton.Right);
+            bool shift = Raylib.IsKeyPressed(KeyboardKey.LeftShift);
+            if (shift && left)
             {
                 if (hoveredSlot != null && hoveredSlot.itemInSlot != null)
                 {
                     if (HandleShiftClick(hoveredSlot))
-                    {
                         return;
-                    }
                 }
             }
 
-            if (!UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Left))
+            if (UIDragContext.isDragging)
             {
-                HandleLeftClickDrag(ui);
-            }
-            else if (UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Left))
-            {
-                HandleMouseClick(Raylib.GetMousePosition(), UIDragContext.draggedCount);
-            }
-            if (!UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Right))
-            {
-                HandleRightClickDrag(ui);
-            }
-            else if (UIDragContext.isDragging && Raylib.IsMouseButtonPressed(MouseButton.Right))
-            {
-                HandleMouseClick(Raylib.GetMousePosition(), 1);
-            }
-        }
-    }
 
-    static void HandleLeftClickDrag(UserInterface ui)
-    {
-        if (hoveredSlot != null && hoveredSlot.itemInSlot != null && hoveredSlot.owner == ui && ui.IsOpen())
-        {
-            UIDragContext.originSlot = hoveredSlot;
-            UIDragContext.draggedItem = hoveredSlot.itemInSlot;
-            UIDragContext.draggedCount = hoveredSlot.amount;
-            UIDragContext.isDragging = true;
-
-            hoveredSlot.itemInSlot = null;
-            hoveredSlot.amount = 0;
-        }
-    }
-
-    static void HandleRightClickDrag(UserInterface ui)
-    {
-        if (hoveredSlot != null && hoveredSlot.itemInSlot != null && hoveredSlot.owner == ui && ui.IsOpen())
-        {
-            UIDragContext.originSlot = hoveredSlot;
-            UIDragContext.draggedItem = hoveredSlot.itemInSlot;
-            UIDragContext.draggedCount = (int)Math.Ceiling((double)hoveredSlot.amount / 2);
-            UIDragContext.isDragging = true;
-
-            if (hoveredSlot.amount == 1)
-            {
-                hoveredSlot.itemInSlot = null;
-                hoveredSlot.amount = 0;
+                if (left) HandleMouseClick(Raylib.GetMousePosition(), UIDragContext.draggedCount);
+                else if (right) HandleMouseClick(Raylib.GetMousePosition(), 1);
+                break;
             }
             else
             {
-                hoveredSlot.amount -= (int)Math.Ceiling((double)hoveredSlot.amount / 2);
-                if (hoveredSlot.amount <= 0)
-                    hoveredSlot = null;
+                if (ui.isHovering)
+                {
+
+                    if (left)
+                    {
+                        if (hoveredSlot != null && hoveredSlot.itemInSlot != null && hoveredSlot.owner != null && hoveredSlot.owner.IsOpen())
+                            HandleLeftClickDrag();
+                    }
+                    else if (right)
+                    {
+                        if (hoveredSlot != null && hoveredSlot.itemInSlot != null && hoveredSlot.owner != null && hoveredSlot.owner.IsOpen())
+                            HandleRightClickDrag();
+                    }
+                    break;
+                }
             }
         }
+    }
+
+    static void HandleLeftClickDrag()
+    {
+
+        UIDragContext.originSlot = hoveredSlot;
+        UIDragContext.draggedItem = hoveredSlot.itemInSlot;
+        UIDragContext.draggedCount = hoveredSlot.amount;
+        UIDragContext.isDragging = true;
+
+        hoveredSlot.itemInSlot = null;
+        hoveredSlot.amount = 0;
+
+    }
+
+    static void HandleRightClickDrag()
+    {
+        UIDragContext.originSlot = hoveredSlot;
+        UIDragContext.draggedItem = hoveredSlot.itemInSlot;
+        UIDragContext.draggedCount = (int)Math.Ceiling((double)hoveredSlot.amount / 2);
+        UIDragContext.isDragging = true;
+
+        if (hoveredSlot.amount == 1)
+        {
+            hoveredSlot.itemInSlot = null;
+            hoveredSlot.amount = 0;
+        }
+        else
+        {
+            hoveredSlot.amount -= (int)Math.Ceiling((double)hoveredSlot.amount / 2);
+            if (hoveredSlot.amount <= 0)
+                hoveredSlot = null;
+        }
+
     }
 
     public static void DrawDraggingSlot()
@@ -195,11 +214,11 @@ public static class SlotUtils
         if (UIDragContext.isDragging && UIDragContext.draggedItem != null)
         {
             Vector2 mousePos = Raylib.GetMousePosition();
-            int size = Core.UI_SLOTSIZE;
+            int slotSize = Core.UI_SLOTSIZE;
             Raylib.DrawTexturePro(
                 UIDragContext.draggedItem.texture,
                 new Rectangle(0, 0, UIDragContext.draggedItem.texture.Width, UIDragContext.draggedItem.texture.Height),
-                new Rectangle(mousePos.X - size / 4, mousePos.Y - size / 4, size / 2, size / 2),
+                new Rectangle(mousePos.X - slotSize / 4, mousePos.Y - slotSize / 4, slotSize / 2, slotSize / 2),
                 Vector2.Zero, 0, Color.White
             );
             if (UIDragContext.draggedCount > 0)
@@ -267,12 +286,16 @@ public static class SlotUtils
     public static void AddInterface(UserInterface userInterface)
     {
         if (!activeInterfaces.Contains(userInterface))
+        {
             activeInterfaces.Add(userInterface);
+            System.Console.WriteLine("Add interface: " + userInterface);
+        }
     }
 
     public static void RemoveInterface(UserInterface userInterface)
     {
         activeInterfaces.Remove(userInterface);
+        System.Console.WriteLine("Remove interface: " + userInterface);
     }
 
     public static void Clear()
