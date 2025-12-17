@@ -307,7 +307,7 @@ public class LightingSystem
             float radius = brightness;
 
             byte alpha = (byte)Math.Clamp((1 - p.age) * 255, 0, 255);
-            Color col = new Color(p.particleColor.R, p.particleColor.G, p.particleColor.B, alpha);
+            Color col = new Color(p.lightColor.R, p.lightColor.G, p.lightColor.B, alpha);
 
             Raylib.DrawCircleGradient((int)(p.transform.position.X + p.GetSize() / 2), (int)(p.transform.position.Y + p.GetSize() / 2), radius, col, Color.Blank);
         }
@@ -320,8 +320,8 @@ public class LightingSystem
 
     public void PerformKawaseRenderPass()
     {
-        KawaseBlurPass(lightingTexture, blurA, 2f);
-        KawaseBlurPass(blurA, blurB, 4f);
+        KawaseBlurPass(lightingTexture, blurA, 1.5f);
+        KawaseBlurPass(blurA, blurB, 1.5f);
     }
 
     public void Draw()

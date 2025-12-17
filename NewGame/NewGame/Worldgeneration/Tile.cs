@@ -57,7 +57,6 @@ public abstract class Tile : GameObject
             Raylib.DrawTexturePro(renderer.sprite, src, dst, origin, transform.zRotation, Color.White);
             if (whiteOverlayOpacity > 0)
             {
-
                 Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
                 Raylib.DrawRectangle((int)((int)dst.X - origin.X), (int)((int)dst.Y - origin.Y), (int)dst.Width, (int)dst.Height, new Color(255, 255, 255, 255 * whiteOverlayOpacity));
                 Raylib.EndBlendMode();
@@ -86,7 +85,7 @@ public abstract class Tile : GameObject
         for (int i = 0; i < 10; i++)
         {
             Vector2 particleVelocity = new Vector2(Random.Shared.Next(-40, 40), Random.Shared.Next(-40, 40));
-            ParticlePool.EmitParticles(1, particleVelocity, color, 50, Core.UNIT_SIZE / 5, 0, transform.position, particleOffset, true);
+            ParticlePool.EmitParticles(1, particleVelocity, color, Color.Blank, 50, Core.UNIT_SIZE / 5, 0, transform.position, particleOffset, true);
         }
 
         Console.WriteLine("Tile destroyed at " + transform.position);
@@ -209,6 +208,7 @@ public class Torch : Tile
         {
             particleEmitter.offset = new Vector2(collider.boxCollider.Width / 2, collider.boxCollider.Height / 2 - 5);
             particleEmitter.color = color;
+            particleEmitter.lightColor = new Color(255, 196, 119, 255);
             particleEmitter.particleAmount = 4;
             particleEmitter.yVelocity = -15;
             particleEmitter.perlinFrequency = 2;
@@ -357,6 +357,7 @@ public class InteractableTile : MultiTile
             userInterface.Close();
             if (ActiveInteractable == this) ActiveInteractable = null;
             SlotUtils.RemoveInterface(userInterface);
+            userInterface.isHovering = false;
             return;
         }
 
@@ -366,7 +367,6 @@ public class InteractableTile : MultiTile
             SlotUtils.RemoveInterface(ActiveInteractable.userInterface);
             ActiveInteractable = null;
         }
-        
         userInterface.Open();
         ActiveInteractable = this;
         SlotUtils.AddInterface(userInterface);
@@ -445,9 +445,9 @@ public class FurnaceTile : InteractableTile
     }
 }
 
-public class CraftingTableTile : InteractableTile
+public class WorkBench : InteractableTile
 {
-    CraftingTableComponent? craftingTableComponent;
+    WorkBenchComponent? workbenchComponent;
     public override void OnPlaced(int originTileX, int originTileY)
     {
         base.OnPlaced(originTileX, originTileY);
@@ -462,20 +462,22 @@ public class CraftingTableTile : InteractableTile
         collider.isTrigger = true;
         isSolid = false;
         tileType = "CraftingTableTile";
-        itemIdsDropAmounts.Add((short)ItemFactory.ItemID.craftingtable, 1);
+        itemIdsDropAmounts.Add((short)ItemFactory.ItemID.workbench, 1);
         tileId = (short)TileFactory.TileID.craftingTable;
-        TileFactory.RegisterTileType<CraftingTableTile>(tileId);
+        TileFactory.RegisterTileType<WorkBench>(tileId);
         color = Color.Brown;
-        renderer.sprite = TextureManager.LoadTexture("Textures/craftingtable.png");
+        renderer.sprite = TextureManager.LoadTexture("Textures/workbench.png");
         collider.boxCollider = new Rectangle(transform.position.X, transform.position.Y, Core.UNIT_SIZE * widthInTiles, Core.UNIT_SIZE);
 
         // attach a crafting component and create the UI from it (tier1 as example)
-        AddComponent<CraftingTableComponent>();
-        craftingTableComponent = GetComponent<CraftingTableComponent>();
-        craftingTableComponent.SetupComponent(CraftingTier.tier1);
-        userInterface = new CraftingTableInterface(craftingTableComponent);
-        var craftingUI = (CraftingTableInterface)userInterface;
-        craftingUI.ownerTile = this;
+        AddComponent<WorkBenchComponent>();
+        workbenchComponent = GetComponent<WorkBenchComponent>();
+        workbenchComponent.SetupComponent(CraftingTier.tier1);
+        userInterface = new WorkBenchInterface();
+        var workbenchUI = (WorkBenchInterface)userInterface;
+        workbenchUI.ownerTile = this;
+        workbenchUI.component = workbenchComponent;
+        workbenchUI.Initialize();
     }
 }
 

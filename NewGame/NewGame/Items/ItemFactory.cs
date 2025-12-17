@@ -34,7 +34,7 @@ public static class ItemFactory
             "TreeTile" => new TreeTile(),
             "SilverOreTile" => new SilverOreTile(),
             "CoalOreTile" => new CoalOreTile(),
-            "CraftingTable" => new CraftingTableTile(),
+            "WorkBench" => new WorkBench(),
             _ => throw new Exception($"Unknown tile type: {data.tileType}")
         };
         tile.transform.position = position;
@@ -92,7 +92,7 @@ public static class ItemFactory
         return new Dictionary<short, int>();
     }
 
-    public static ItemData? GetitemFromItemID(short itemID)
+    public static ItemData? GetItemFromItemID(short itemID)
     {
         if (itemDataDict == null)
             return null;
@@ -140,6 +140,6 @@ public static class ItemFactory
         coalore = 11,
         copperingot = 12,
         silverIngot = 13,
-        craftingtable = 14
+        workbench = 14
     }
 }

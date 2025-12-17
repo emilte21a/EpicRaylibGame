@@ -167,43 +167,15 @@ public class WorldGeneration
         surfaceIndex = null;
 
         int worldTileX = x / Core.UNIT_SIZE;
-
         int chunkX = (int)MathF.Floor((float)worldTileX / chunkSize);
 
-        var chunkRows = chunkMap.Keys
-                        .Where(k => k.Item1 == chunkX)
-                        .Select(k => k.Item2)
-                        .Where(k => k < 10)
-                        .Distinct()
-                        .OrderBy(y => y)
-                        .ToList();
+        var chunkEntry = chunkMap.FirstOrDefault(k => k.Key.Item1 == chunkX);
 
-        if (chunkRows.Count == 0)
-        {
+        if (chunkEntry.Value == null)
             return false;
-        }
 
-        foreach (var chunkRow in chunkRows)
-        {
-            var chunkIndex = (chunkX, chunkRow);
-            if (!chunkMap.TryGetValue(chunkIndex, out var chunk))
-                continue;
-
-            int chunkStartTileY = chunkRow * chunkSize;
-            int chunkEndTileY = chunkStartTileY + chunkSize - 1;
-
-            for (int worldY = chunkStartTileY; worldY <= chunkEndTileY; worldY++)
-            {
-                var key = (worldTileX, worldY);
-                if (chunk.tileMap.TryGetValue(key, out var tile) && tile != null && tile.isSolid)
-                {
-                    surfaceIndex = worldY;
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        surfaceIndex = chunkEntry.Value.EvaluateSurfaceWorldY(worldTileX);
+        return true;
     }
 
     public void SaveChunk((int, int) chunkIndex)

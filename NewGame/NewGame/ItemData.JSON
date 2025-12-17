@@ -31,7 +31,7 @@
     {
         "id": 4,
         "name": "Torch",
-        "texturePath": "Textures/torch.png",
+        "texturePath": "Textures/torchIcon.png",
         "tileType": "Torch",
         "recipe": {
             "7": 1,
@@ -90,7 +90,7 @@
     {
         "id": 10,
         "name": "Silver Pickaxe",
-        "texturePath": "Textures/pickaxe.png",
+        "texturePath": "Textures/silverpickaxe.png",
         "tileType": "",
         "recipe": {
             "7": 1
@@ -131,13 +131,13 @@
     },
     {
         "id": 14,
-        "name": "Crafting Table",
-        "texturePath": "Textures/craftingtable.png",
-        "tileType": "CraftingTable",
+        "name": "Workbench",
+        "texturePath": "Textures/workbench.png",
+        "tileType": "WorkBench",
         "recipe": {
             "7": 4
         },
-        "description": "A basic crafting table made of wood",
+        "description": "A basic workbench made of wood",
         "placeable": true
     }
 ]

@@ -6,6 +6,18 @@ public static class SlotUtils
 
     static List<UserInterface> activeInterfaces = [];
 
+    // Returns true if any registered interface is currently open
+    public static bool AnyInterfaceOpen()
+    {
+        return activeInterfaces.Any(u => u != null && u is not InventoryInterface && u.IsOpen());
+    }
+
+    // Returns true if any open interface exists other than the provided one
+    public static bool AnyOtherInterfaceOpen(UserInterface except)
+    {
+        return activeInterfaces.Any(u => u != null && u != except && u.IsOpen());
+    }
+
     public static bool TryPlaceItemInSlot(Slot targetSlot, int amountToDropInSlot)
     {
         if (!activeInterfaces.Contains(targetSlot.owner)) return false;
@@ -30,6 +42,8 @@ public static class SlotUtils
                 return false;
             }
         }
+        
+        if (!targetSlot.CanAcceptItem(hoveredSlot!.itemInSlot!)) return false;
 
         var draggedItem = UIDragContext.draggedItem!;
         var draggedCount = UIDragContext.draggedCount;
@@ -122,12 +136,12 @@ public static class SlotUtils
                     foreach (var slot in slotContainer.Slots)
                     {
                         slot.Update();
-                         if (slot.isHovered)
-                    {
-                        hoveredSlot = slot;
-                        break;
-                    }
-                    if (hoveredSlot != null) break;
+                        if (slot.isHovered)
+                        {
+                            hoveredSlot = slot;
+                            break;
+                        }
+                        if (hoveredSlot != null) break;
                     }
                 }
             }
@@ -177,7 +191,7 @@ public static class SlotUtils
 
     static void HandleLeftClickDrag()
     {
-
+        if (!hoveredSlot.CanBeDragged) return;
         UIDragContext.originSlot = hoveredSlot;
         UIDragContext.draggedItem = hoveredSlot.itemInSlot;
         UIDragContext.draggedCount = hoveredSlot.amount;
@@ -190,6 +204,7 @@ public static class SlotUtils
 
     static void HandleRightClickDrag()
     {
+        if (!hoveredSlot.CanBeDragged) return;
         UIDragContext.originSlot = hoveredSlot;
         UIDragContext.draggedItem = hoveredSlot.itemInSlot;
         UIDragContext.draggedCount = (int)Math.Ceiling((double)hoveredSlot.amount / 2);
@@ -310,10 +325,7 @@ public static class SlotUtils
 
     private static bool CanPlaceInSlot(Slot? targetSlot, Item draggedItem)
     {
-        if (targetSlot == null) return false;
-
-        if (targetSlot is ResultSlot) return false;
-        if (targetSlot is CraftingSlot) return false;
+        if (!targetSlot.CanAcceptItem(draggedItem)) return false;
 
         if (targetSlot is FurnaceSlot)
         {

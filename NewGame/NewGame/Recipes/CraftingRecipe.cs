@@ -24,7 +24,7 @@ public class CraftingRecipe
 public static class CraftingRecipes
 {
     public static List<CraftingRecipe> craftingRecipes = [
-        new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.craftingtable),
+        new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.workbench),
         new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.torch)
     ];
 }

@@ -5,6 +5,7 @@ public class ParticleEmitter : Component
     private float particleCooldown;
     public float particleSpawnDelay;
     public Color color = Color.White;
+    public Color lightColor = Color.White;
     public int particleAmount = 1;
     public int yVelocity = -10;
     public int perlinFrequency = 1;
@@ -15,12 +16,12 @@ public class ParticleEmitter : Component
 
     public ParticleEmitter()
     {
-       
+
     }
 
     public override void Start()
     {
-        base.Start(); 
+        base.Start();
         ResetCooldown();
     }
 
@@ -49,6 +50,7 @@ public class ParticleEmitter : Component
                 1,
                 velocity,
                 color,
+                lightColor,
                 lifeTime, size,
                 brightness,
                 parent.transform.position,

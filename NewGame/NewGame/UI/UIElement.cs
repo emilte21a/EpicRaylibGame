@@ -21,7 +21,7 @@ public class UIElement : GameObject
         this.width = width;
         this.height = height;
         var pos = GetPositionFromAlignment(xAlign, yAlign);
-        rectangle = new Raylib_cs.Rectangle(pos.X, pos.Y, width, height);
+        rectangle = new Rectangle(pos.X, pos.Y, width, height);
     }
 
     public override void Update()

@@ -2,9 +2,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Numerics;
 
-public class CraftingTableComponent : Component
+public class WorkBenchComponent : Component
 {
-    public ResultSlot? resultSlot = null;
     public CraftingTier craftingTier;
     public List<CraftingRecipe> availableRecipes = [];
 

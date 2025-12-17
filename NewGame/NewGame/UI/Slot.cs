@@ -8,6 +8,8 @@ public abstract class Slot
     public int amount;
     private Texture2D slotFrame;
     public UserInterface? owner;
+    public virtual bool CanBeDragged => true;
+    public virtual bool CanAcceptItem(Item item) => true;
 
     public Slot(Item? itemInSlot)
     {
@@ -38,7 +40,7 @@ public abstract class Slot
         }
     }
 
-    public void Draw()
+    public virtual void Draw()
     {
         if (owner != null && !owner.IsOpen())
             return;
@@ -58,9 +60,9 @@ public abstract class Slot
 
     }
 
-    void DrawFrame()
+    protected void DrawFrame()
     {
-        Raylib.DrawTexturePro(slotFrame, new Raylib_cs.Rectangle(0, 0, slotFrame.Width, slotFrame.Height), new Raylib_cs.Rectangle(rectangle.X, rectangle.Y, slotSize, slotSize), Vector2.Zero, 0, Color.White);
+        Raylib.DrawTexturePro(slotFrame, new Rectangle(0, 0, slotFrame.Width, slotFrame.Height), new Rectangle(rectangle.X, rectangle.Y, slotSize, slotSize), Vector2.Zero, 0, Color.White);
     }
 
     public void SetSlotFrame(string newTexturePath)
@@ -90,6 +92,8 @@ public class FurnaceSlot : Slot
 
 public class ResultSlot : Slot
 {
+    public override bool CanBeDragged => true;
+    public override bool CanAcceptItem(Item item) => false;
     public ResultSlot(Item? itemInSlot) : base(itemInSlot)
     {
     }
@@ -98,6 +102,9 @@ public class ResultSlot : Slot
 public class CraftingSlot : Slot
 {
     public CraftingRecipe craftingRecipe;
+    public override bool CanBeDragged => false;
+    public override bool CanAcceptItem(Item item) => false;
+    public Color itemColor = new Color(255, 255, 255, 120);
 
     public CraftingSlot(CraftingRecipe craftingRecipe, Item? itemInSlot = null) : base(itemInSlot)
     {
@@ -122,6 +129,25 @@ public class CraftingSlot : Slot
         {
             color = Color.Black;
             isHovered = false;
+        }
+    }
+
+    public override void Draw()
+    {
+        if (owner != null && !owner.IsOpen())
+            return;
+
+        Raylib.DrawRectangle((int)rectangle.X, (int)rectangle.Y, (int)rectangle.Width, (int)rectangle.Height, color);
+        DrawFrame();
+        if (itemInSlot != null)
+        {
+            Raylib.DrawTexturePro(itemInSlot.texture,
+            new Rectangle(0, 0, itemInSlot.texture.Width, itemInSlot.texture.Height),
+            new Rectangle(rectangle.X + slotSize / 4, rectangle.Y + slotSize / 4,
+            slotSize / 2, slotSize / 2)
+            , Vector2.Zero, 0, itemColor);
+            if (amount > 0)
+                Raylib.DrawText($"{amount}", (int)(rectangle.X + 10), (int)(rectangle.Y + 10), 30, Color.White);
         }
     }
 }

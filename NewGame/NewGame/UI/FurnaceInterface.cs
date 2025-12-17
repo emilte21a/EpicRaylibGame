@@ -11,7 +11,7 @@ public class FurnaceInterface : UserInterface, ISlotContainer
     public FurnaceInterface()
     {
         Console.WriteLine("FurnaceInterface created " + GetHashCode());
-
+        name = "Furnace";
         float panelW = 800;
         float panelH = 300;
 

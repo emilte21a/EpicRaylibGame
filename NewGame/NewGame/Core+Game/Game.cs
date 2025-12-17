@@ -8,6 +8,7 @@ global using ConfigFlags = Raylib_cs.ConfigFlags;
 global using KeyboardKey = Raylib_cs.KeyboardKey;
 global using Raylib = Raylib_cs.Raylib;
 global using Rectangle = Raylib_cs.Rectangle;
+using Image = Raylib_cs.Image;
 
 public class Game
 {
@@ -24,9 +25,14 @@ public class Game
 
     private bool paused = false;
 
+    Image icon;
+
     public Game()
     {
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+        icon = Raylib.LoadImage("Textures/windowIcon.ico");
+        Raylib.SetWindowIcon(icon);
+        // Raylib.UnloadImage(icon);
         Raylib.InitWindow(screenWidth, screenHeight, "Game");
         Raylib.SetConfigFlags(ConfigFlags.AlwaysRunWindow);
         // Raylib.ToggleFullscreen();
@@ -39,7 +45,7 @@ public class Game
 
         screenRectangle = new Rectangle(0, 0, screenWidth, screenHeight);
         SceneManager.Initialize();
-       
+
     }
 
     public void Run()

@@ -25,7 +25,6 @@ public sealed class Player : Entity
 
     public InventoryInterface? inventory;
     public InventoryComponent? inventoryComponent;
-    public CraftingTableComponent? craftingTableComponent;
 
     Item currentItem;
     InteractableTile? interactableTile;
@@ -46,8 +45,7 @@ public sealed class Player : Entity
         AddComponent<InventoryComponent>();
         inventoryComponent = GetComponent<InventoryComponent>();
         inventory = new(inventoryComponent);
-        AddComponent<CraftingTableComponent>();
-        craftingTableComponent = GetComponent<CraftingTableComponent>();
+        AddComponent<WorkBenchComponent>();
         collider!.boxCollider.X = transform.position.X;
         collider.boxCollider.Y = transform.position.Y;
         collider.boxCollider.Height *= 2;
@@ -132,7 +130,7 @@ public sealed class Player : Entity
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.coalore));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.copperore));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverore));
-            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.craftingtable));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.workbench));
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.K))
@@ -226,7 +224,7 @@ public sealed class Player : Entity
         }
 
         if (physicsBody.velocity.Y > 0)
-            physicsBody.gravity = new Vector2(0, 25f);
+            physicsBody.gravity = new Vector2(0, 35f);
 
         else
             physicsBody.gravity = new Vector2(0, 20f);

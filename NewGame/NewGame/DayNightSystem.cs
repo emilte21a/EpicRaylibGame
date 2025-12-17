@@ -128,9 +128,9 @@ public class DayNightSystem
         new Rectangle(0, 0, sunRenderTexture.Texture.Width, -sunRenderTexture.Texture.Height),
         new Rectangle(0, 0, sunRenderTexture.Texture.Width, sunRenderTexture.Texture.Height), Vector2.Zero, 0, Color.White);
         Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
-        Raylib.DrawTexturePro(sunBloomTextureA.Texture,
+        Raylib.DrawTexturePro(sunBloomTextureB.Texture,
         new Rectangle(0, 0, sunBloomTextureB.Texture.Width, -sunBloomTextureB.Texture.Height),
-        new Rectangle(0, 0, sunBloomTextureB.Texture.Width, sunBloomTextureB.Texture.Height), Vector2.Zero, 0, new Raylib_cs.Color(255,255,255,120));
+        new Rectangle(0, 0, sunBloomTextureB.Texture.Width, sunBloomTextureB.Texture.Height), Vector2.Zero, 0, new Color(255,255,255,120));
         Raylib.EndBlendMode();
     }
 

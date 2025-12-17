@@ -4,6 +4,7 @@ using System.IO;
 using SharpNoise.Modules;
 using LibNoise.Filter;
 using LibNoise;
+using Microsoft.VisualBasic;
 
 public class Chunk
 {
@@ -151,9 +152,9 @@ public class Chunk
     private const float SURFACE_NOISE_SCALE = 10;
     private const int SURFACE_OFFSET = 30;
 
-    Perlin surfaceNoise = new Perlin();
-    Perlin caveNoise = new Perlin();
-    Perlin caveNoiseOctave = new Perlin();
+    static Perlin surfaceNoise = new Perlin();
+    static Perlin caveNoise = new Perlin();
+    static Perlin caveNoiseOctave = new Perlin();
     int chunkSize = Core.CHUNK_SIZE;
     int chunkHeight;
 
@@ -206,10 +207,7 @@ public class Chunk
             int rngSeed = chunkSeed ^ (worldTileX * 73856093);
             var rng = new Random(rngSeed);
 
-            int surfaceAmplitude = chunkSize * 2;
-            float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0);
-            float norm = (noiseVal + 1f) * 1f;
-            int surfaceWorldY = SURFACE_OFFSET + (int)(norm * surfaceAmplitude);
+            int surfaceWorldY = EvaluateSurfaceWorldY(worldTileX);
 
             for (int localY = 0; localY < chunkSize; localY++)
             {
@@ -260,6 +258,15 @@ public class Chunk
                 }
             }
         }
+    }
+
+    public int EvaluateSurfaceWorldY(int worldTileX)
+    {
+        double nx = worldTileX * 0.01;
+        int surfaceAmplitude = chunkSize * 2;
+        float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0);
+        float norm = (noiseVal + 1f) * 0.5f;
+        return SURFACE_OFFSET + (int)(norm * surfaceAmplitude);
     }
 
     // update PlaceSolidTile to accept and forward rng to foliage placement

@@ -118,12 +118,10 @@ c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\D
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\copperingot.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\copperore.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\copperoretile.png
-c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\craftingtable.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\dirt.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\furnace.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\grass.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\grassfoliage.png
-c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\pickaxe.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\silveringot.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\silverore.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\silveroretile.png
@@ -179,3 +177,9 @@ c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\D
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays_occlusion.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\shining_material.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\cursor.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\torchIcon.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\windowIcon.ico
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\silverpickaxe.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\workbench.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\stonebrick.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\woodenpickaxe.png

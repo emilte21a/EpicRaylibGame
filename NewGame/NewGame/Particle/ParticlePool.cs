@@ -19,12 +19,13 @@ public static class ParticlePool
         inactive.Push(p);
     }
 
-    public static void EmitParticles(int amount, Vector2 velocity, Color color, float lifeTime, int size, int brightness, Vector2 position, Vector2 offset, bool randomVelocity)
+    public static void EmitParticles(int amount, Vector2 velocity, Color color, Color lightColor, float lifeTime, int size, int brightness, Vector2 position, Vector2 offset, bool randomVelocity)
     {
         for (int i = 0; i < amount; i++)
         {
             var p = GetParticle();
             p.particleColor = color;
+            p.lightColor = lightColor;
 
             var v = velocity + (randomVelocity ? new(Random.Shared.Next(-10, 10), Random.Shared.Next(-10, 10)) : Vector2.Zero);
             p.Init(position + offset, v, lifeTime, size, brightness);

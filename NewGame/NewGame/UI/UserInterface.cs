@@ -3,6 +3,7 @@ public abstract class UserInterface : GameObject
     public bool isHovering = false;
     protected Rectangle interactionPanel;
     protected bool isOpen = false;
+    protected string name;
     public override void Start()
     {
         base.Start();

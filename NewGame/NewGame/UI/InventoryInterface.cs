@@ -4,6 +4,9 @@ public class InventoryInterface : UserInterface, ISlotContainer
     public InventoryComponent inventoryComp;
     public IEnumerable<Slot> Slots => inventoryComp.inventorySlots.Cast<Slot>();
 
+    // crafting UI drawn above the inventory when tiled view is enabled
+    public InventoryCraftingInterface? inventoryCraftingInterface;
+
     public int inventorySize = Core.PLAYER_INVENTORY_SIZE;
     public int hotBarLength = Core.PLAYER_HOTBAR_SIZE;
     public bool showTiledInventory = false;
@@ -12,12 +15,16 @@ public class InventoryInterface : UserInterface, ISlotContainer
 
     public InventoryInterface(InventoryComponent inventoryComponent)
     {
+        name = "Inventory";
         inventoryComp = inventoryComponent;
         foreach (var slot in inventoryComp.inventorySlots)
         {
             slot.owner = this;
         }
         Initialize();
+        inventoryCraftingInterface = new InventoryCraftingInterface();
+        inventoryCraftingInterface.ownerInventory = this;
+        inventoryCraftingInterface.Start();
         SlotUtils.AddInterface(this);
         isOpen = true;
     }
@@ -32,6 +39,7 @@ public class InventoryInterface : UserInterface, ISlotContainer
     {
         base.Update();
         UpdateInventoryPosition();
+        inventoryCraftingInterface?.Update();
     }
 
     public override void Draw()
@@ -55,8 +63,10 @@ public class InventoryInterface : UserInterface, ISlotContainer
         {
             Raylib.DrawText(SlotUtils.hoveredSlot.itemInSlot.description, (int)SlotUtils.hoveredSlot.rectangle.X, (int)SlotUtils.hoveredSlot.rectangle.Y - 20, 20, Color.White);
         }
-    }
 
+        // draw crafting UI on top of inventory if present
+        inventoryCraftingInterface?.Draw();
+    }
     public void HandleHotbarInput()
     {
         int wheel = (int)Raylib.GetMouseWheelMove();

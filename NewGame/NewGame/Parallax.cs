@@ -11,7 +11,7 @@ public class ParallaxLayer : GameObject
         AddComponent<Renderer>();
         renderer = GetComponent<Renderer>();
         renderer.sprite = texture;
-        rectangle = new Raylib_cs.Rectangle(0, 0, renderer.sprite.Width, renderer.sprite.Height);
+        rectangle = new Rectangle(0, 0, renderer.sprite.Width, renderer.sprite.Height);
         this.factor = factor;
     }
 }

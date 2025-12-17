@@ -36,7 +36,7 @@ public class CameraSystem
         {
             Rotation = 0,
             Target = new Vector2(0, 0),
-            Zoom = 0.7f
+            Zoom = 0.56f
         };
 
         pixelPerfectCamera = new();

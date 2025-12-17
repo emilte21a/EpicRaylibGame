@@ -4,22 +4,23 @@ public class Particle : GameObject
     public float lifetime;
     public Vector2 velocity;
     public float age;
-    public Color particleColor = new Raylib_cs.Color(255, 255, 255, 0);
+    public Color particleColor = new Color(255, 255, 255, 0);
+    public Color lightColor = Color.White;
     private float size;
     public Lightsource? lightSource;
 
     public void Init(Vector2 position, Vector2 velocity, float lifetime, float size, int brightness)
     {
         transform.position = position;
-        
+        AddComponent<Lightsource>();
+        lightSource = GetComponent<Lightsource>();
+        lightSource.light = new Light(position, brightness, lightColor);
+
         this.velocity = velocity;
         this.lifetime = lifetime;
         age = 0;
         isActive = true;
         this.size = size;
-        AddComponent<Lightsource>();
-        lightSource = GetComponent<Lightsource>();
-        lightSource.light = new Light(position, brightness, particleColor);
     }
 
     public override void Update()

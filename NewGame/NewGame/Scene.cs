@@ -49,7 +49,7 @@ public class StartScene : Scene
         // selection clicks
         for (int i = 0; i < (saveList?.Count ?? 0); i++)
         {
-            var r = new Raylib_cs.Rectangle(uiX, uiY + i * listItemHeight, listWidth, listItemHeight - 4);
+            var r = new Rectangle(uiX, uiY + i * listItemHeight, listWidth, listItemHeight - 4);
             if (Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.CheckCollisionPointRec(mouse, r))
             {
                 selectedSaveIndex = i;
@@ -57,7 +57,7 @@ public class StartScene : Scene
         }
 
         // Load button
-        var loadRect = new Raylib_cs.Rectangle(uiX, 520, 120, 36);
+        var loadRect = new Rectangle(uiX, 520, 120, 36);
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.CheckCollisionPointRec(mouse, loadRect))
         {
             if (selectedSaveIndex >= 0 && saveList != null && selectedSaveIndex < saveList.Count)
@@ -80,7 +80,7 @@ public class StartScene : Scene
         }
 
         // Delete button
-        var deleteRect = new Raylib_cs.Rectangle(uiX + 140, 520, 120, 36);
+        var deleteRect = new Rectangle(uiX + 140, 520, 120, 36);
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.CheckCollisionPointRec(mouse, deleteRect))
         {
             if (selectedSaveIndex >= 0 && saveList != null && selectedSaveIndex < saveList.Count)
@@ -93,7 +93,7 @@ public class StartScene : Scene
         }
 
         // New save button
-        var newRect = new Raylib_cs.Rectangle(uiX + 280, 520, 120, 36);
+        var newRect = new Rectangle(uiX + 280, 520, 120, 36);
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.CheckCollisionPointRec(mouse, newRect))
         {
             var name = "Save " + DateTime.Now.ToString("yyyyMMdd_HHmm");
@@ -129,22 +129,22 @@ public class StartScene : Scene
         for (int i = 0; i < (saveList?.Count ?? 0); i++)
         {
             var s = saveList[i];
-            var r = new Raylib_cs.Rectangle(uiX, uiY + i * listItemHeight, listWidth, listItemHeight - 4);
+            var r = new Rectangle(uiX, uiY + i * listItemHeight, listWidth, listItemHeight - 4);
             Color bg = (i == selectedSaveIndex) ? Color.DarkGray : Color.Gray;
             Raylib.DrawRectangleRec(r, bg);
             Raylib.DrawText($"{s.Name} - {s.Timestamp.ToLocalTime()}", uiX + 6, uiY + i * listItemHeight + 4, 14, Color.White);
         }
 
         // buttons
-        var loadRect = new Raylib_cs.Rectangle(uiX, 520, 120, 36);
+        var loadRect = new Rectangle(uiX, 520, 120, 36);
         Raylib.DrawRectangleRec(loadRect, Color.LightGray);
         Raylib.DrawText("Load", (int)loadRect.X + 18, (int)loadRect.Y + 6, 20, Color.Black);
 
-        var deleteRect = new Raylib_cs.Rectangle(uiX + 140, 520, 120, 36);
+        var deleteRect = new Rectangle(uiX + 140, 520, 120, 36);
         Raylib.DrawRectangleRec(deleteRect, Color.LightGray);
         Raylib.DrawText("Delete", (int)deleteRect.X + 12, (int)deleteRect.Y + 6, 20, Color.Black);
 
-        var newRect = new Raylib_cs.Rectangle(uiX + 280, 520, 120, 36);
+        var newRect = new Rectangle(uiX + 280, 520, 120, 36);
         Raylib.DrawRectangleRec(newRect, Color.LightGray);
         Raylib.DrawText("New Save", (int)newRect.X + 8, (int)newRect.Y + 6, 20, Color.Black);
         DrawCursor();
@@ -257,10 +257,10 @@ public class MainScene : Scene
         Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
         Raylib.DrawTexturePro(rndtxt2.Texture, CameraSystem.Instance.sourceRec, CameraSystem.Instance.destRec, Vector2.Zero, 0, new Color(255, 255, 255, 65));
         Raylib.EndBlendMode();
-        // zoom = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 100, 100, 10), "Zoom", $"{zoom}", zoom, 0.01f, 2);
-        // CameraSystem.Instance.SetZoom(zoom);
-        // Raylib.DrawText($"{DayNightSystem.Instance.GetCurrentTime() / DayNightSystem.TimeScale}", 50, 400, 20, Color.Black);
-        // DayNightSystem.TimeScale = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 600, 100, 10), "Time Scale", $"{DayNightSystem.TimeScale}", DayNightSystem.TimeScale, 1f, 60f);
+        zoom = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 100, 100, 10), "Zoom", $"{zoom}", zoom, 0.01f, 2);
+        CameraSystem.Instance.SetZoom(zoom);
+        Raylib.DrawText($"{DayNightSystem.Instance.GetCurrentTime() / DayNightSystem.TimeScale}", 50, 400, 20, Color.Black);
+        DayNightSystem.TimeScale = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 600, 100, 10), "Time Scale", $"{DayNightSystem.TimeScale}", DayNightSystem.TimeScale, 1f, 60f);
 
         foreach (var ui in SlotUtils.GetInterfaces())
         {
