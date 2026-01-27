@@ -32,8 +32,7 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
     {
         foreach (var recipe in component.availableRecipes)
         {
-            var cs = new CraftingSlot(null);
-            cs.craftingRecipe = recipe;
+            var cs = new CraftingSlot(recipe);
             craftingSlots.Add(cs);
         }
         for (int i = 0; i < craftingSlots.Count; i++)
@@ -41,7 +40,8 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
             var slot = craftingSlots[i];
             slot.itemInSlot = ItemFactory.CreateItem(craftingSlots[i].craftingRecipe.resultItemId);
             slot.owner = this;
-            slot.rectangle = new Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
+            slot.rectangle.X = recipeItemRect.X;
+            slot.rectangle.Y = recipeItemRect.Y + i * (recipeItemRect.Height + 8);
         }
     }
 
@@ -49,13 +49,12 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
     {
         base.Update();
 
-        var player = WorldGeneration.Instance.playerRef;
+        var player = Game.player;
         if (player == null || component == null) return;
 
         for (int i = 0; i < craftingSlots.Count; i++)
         {
-            var itemRect = new Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
-            if (Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), itemRect))
+            if (Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), craftingSlots[i].rectangle))
             {
                 selectedIndex = i;
                 selectedRecipe = craftingSlots[i].craftingRecipe;
@@ -66,10 +65,10 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
             if (UIDragContext.draggedItem != null && UIDragContext.draggedItem.ID != slot.craftingRecipe.resultItemId) continue;
             if (Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), slot.rectangle))
             {
-                bool canCraft = component.CanCraft(selectedRecipe, player.GetComponent<InventoryComponent>()!);
+                bool canCraft = component.CanCraft(slot.craftingRecipe, player.GetComponent<InventoryComponent>()!);
                 if (canCraft)
                 {
-                    var created = component.Craft(selectedRecipe, player.GetComponent<InventoryComponent>()!);
+                    var created = component.Craft(slot.craftingRecipe, player.GetComponent<InventoryComponent>()!);
                     if (created != null)
                     {
                         UIDragContext.originSlot = slot;
@@ -93,9 +92,9 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
 
         for (int i = 0; i < craftingSlots.Count; i++)
         {
-            var player = WorldGeneration.Instance.playerRef;
-            bool canCraft = component.CanCraft(selectedRecipe, player.GetComponent<InventoryComponent>()!);
+            var player = Game.player;
             var r = craftingSlots[i].craftingRecipe;
+            bool canCraft = component.CanCraft(r, player.GetComponent<InventoryComponent>()!);
             var itemRect = new Rectangle(recipeItemRect.X, recipeItemRect.Y + i * (recipeItemRect.Height + 8), recipeItemRect.Width, recipeItemRect.Height);
 
             Color tint = canCraft
@@ -104,6 +103,7 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
 
             craftingSlots[i].itemColor = tint;
             craftingSlots[i].Draw();
+
 
             var itemData = ItemFactory.GetItemFromItemID(r.resultItemId);
             string name = itemData?.name ?? $"Item {r.resultItemId}";
@@ -115,7 +115,7 @@ public class WorkBenchInterface : UserInterface, ISlotContainer
         {
             Raylib.DrawText("Ingredients:", (int)ingredientRect.X + 8, (int)ingredientRect.Y + 4, 20, Color.White);
 
-            var player = WorldGeneration.Instance.playerRef;
+            var player = Game.player;
 
             if (player != null)
             {

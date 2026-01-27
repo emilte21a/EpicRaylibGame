@@ -59,19 +59,19 @@ public class Chunk
     {
         foreach (var t in tileMap.Values)
         {
-            t.shouldBeDestroyed = true;
+            Game.RemoveGameObject(t);
             CollisionSystem.Instance.staticSpatialHash.Remove(t);
         }
 
         foreach (var f in foliageMap.Values)
         {
-            f.shouldBeDestroyed = true;
+            Game.RemoveGameObject(f);
             CollisionSystem.Instance.staticSpatialHash.Remove(f);
         }
 
         foreach (var t in treeMap.Values)
         {
-            t.shouldBeDestroyed = true;
+            Game.RemoveGameObject(t);
             CollisionSystem.Instance.staticSpatialHash.Remove(t);
         }
 
@@ -147,7 +147,7 @@ public class Chunk
 
     private const float CAVE_MIN_THRESHOLD = 0.05f;
     private const float CAVE_MAX_THRESHOLD = 0.25f;
-    private const float CAVE_TUNNEL_THRESHOLD_MAX = 0.42f;
+    private const float CAVE_TUNNEL_THRESHOLD_MAX = 0.44f;
 
     private const float SURFACE_NOISE_SCALE = 10;
     private const int SURFACE_OFFSET = 30;
@@ -155,6 +155,7 @@ public class Chunk
     static Perlin surfaceNoise = new Perlin();
     static Perlin caveNoise = new Perlin();
     static Perlin caveNoiseOctave = new Perlin();
+    static Simplex simplex = new Simplex();
     int chunkSize = Core.CHUNK_SIZE;
     int chunkHeight;
 
@@ -184,6 +185,10 @@ public class Chunk
         caveNoise.Seed = seed;
         caveNoiseOctave.Frequency = 4.5f;
         caveNoiseOctave.Seed = seed;
+        simplex.Frequency = 2;
+        simplex.OctaveCount = 3;
+        simplex.Lacunarity = 2f;
+        simplex.Persistence = 0.5f;
 
         oreNoises = new Perlin[ores.Length];
         for (int i = 0; i < ores.Length; i++)
@@ -225,8 +230,7 @@ public class Chunk
                 const float caveBaseChance = 1.1f;
                 const float caveMaxChance = 1.7f;
                 float caveChance = Raymath.Lerp(caveBaseChance, caveMaxChance, depthNormalized / 2);
-                double caveValue = (caveNoise.GetValue(nx, ny, 0) + 1.0) * 0.5 / caveChance;
-
+                double caveValue = (caveNoise.GetValue(nx, ny, 0) + 1.0) * 0.5 / caveChance + (simplex.GetValue(nx, ny, 0) + 1) * 0.5f / caveChance;
                 double caveTunnelNoise = (caveNoiseOctave.GetValue(nx, ny, 0) + 1.0) * 0.5d;
 
                 if (caveValue > CAVE_MIN_THRESHOLD && caveValue < CAVE_MAX_THRESHOLD)
@@ -260,10 +264,10 @@ public class Chunk
         }
     }
 
-    public int EvaluateSurfaceWorldY(int worldTileX)
+    public static int EvaluateSurfaceWorldY(int worldTileX)
     {
         double nx = worldTileX * 0.01;
-        int surfaceAmplitude = chunkSize * 2;
+        int surfaceAmplitude = Core.CHUNK_SIZE * 2;
         float noiseVal = (float)surfaceNoise.GetValue(nx, 0, 0);
         float norm = (noiseVal + 1f) * 0.5f;
         return SURFACE_OFFSET + (int)(norm * surfaceAmplitude);

@@ -30,9 +30,9 @@ public class StartScene : Scene
 
     // UI layout values reused in Update + Draw
     readonly int uiX = 40;
-    readonly int uiY = 80;
-    readonly int listWidth = 400;
-    readonly int listItemHeight = 28;
+    readonly int uiY = 130;
+    readonly int listWidth = 600;
+    readonly int listItemHeight = 60;
 
     void RefreshSaveList()
     {
@@ -121,7 +121,7 @@ public class StartScene : Scene
     public override void Draw()
     {
         Raylib.BeginDrawing();
-        Raylib.ClearBackground(Color.White);
+        Raylib.ClearBackground(Color.Black);
 
         // draw UI
         Raylib.DrawText("Load Game", uiX, 40, 36, Color.White);
@@ -137,15 +137,15 @@ public class StartScene : Scene
 
         // buttons
         var loadRect = new Rectangle(uiX, 520, 120, 36);
-        Raylib.DrawRectangleRec(loadRect, Color.LightGray);
+        Raylib.DrawRectangleRec(loadRect, Core.UI_INTERACTION_PANEL_COLOR);
         Raylib.DrawText("Load", (int)loadRect.X + 18, (int)loadRect.Y + 6, 20, Color.Black);
 
         var deleteRect = new Rectangle(uiX + 140, 520, 120, 36);
-        Raylib.DrawRectangleRec(deleteRect, Color.LightGray);
+        Raylib.DrawRectangleRec(deleteRect, Core.UI_INTERACTION_PANEL_COLOR);
         Raylib.DrawText("Delete", (int)deleteRect.X + 12, (int)deleteRect.Y + 6, 20, Color.Black);
 
         var newRect = new Rectangle(uiX + 280, 520, 120, 36);
-        Raylib.DrawRectangleRec(newRect, Color.LightGray);
+        Raylib.DrawRectangleRec(newRect, Core.UI_INTERACTION_PANEL_COLOR);
         Raylib.DrawText("New Save", (int)newRect.X + 8, (int)newRect.Y + 6, 20, Color.Black);
         DrawCursor();
 
@@ -165,13 +165,17 @@ public class MainScene : Scene
     {
         session = gameSession;
         player = new();
+        Game.player = player;
         WorldGeneration.Instance.session = session;
         WorldGeneration.Instance.InitializeSeed(session.Seed);
-        WorldGeneration.Instance.playerRef = player;
         player.SetPlayerPos(session.PlayerStartPosition);
         DebugMenu.Instance.playerRef = player;
-        ItemFactory.LoadItems("ItemData.JSON");
+        ItemFactory.LoadItems("Items/ItemData.JSON");
+        CraftingRecipes.Initialize();
+        Console.WriteLine("Initialize crafting recipes-------------------------------------------------------------");
+        SaveSystem.LoadAndRestoreGame(gameSession.Save.Id, player);
         LightingSystem.Instance.Initialize();
+        player.inventory.InitializeInventoryInterface();
     }
 
     public override void Update()
@@ -182,6 +186,8 @@ public class MainScene : Scene
         WorldGeneration.Instance.Update();
         physicsSystem.Update();
         CollisionSystem.Instance.Update();
+        Game.GetGameObjects().ToList().ForEach(g => g.Update());
+        EventManager.Instance.Update();
 
         CameraSystem.Instance.Update();
         CameraSystem.Instance.SetTarget(Raymath.Vector2Lerp(CameraSystem.Instance.GetTarget(), player.transform.position, 7 * Raylib.GetFrameTime()));
@@ -205,29 +211,10 @@ public class MainScene : Scene
             }
         }
 
-        foreach (Entity entity in Game.GetEntities().ToList())
-        {
-            entity.Update();
-        }
-
         foreach (var p in ParticlePool.ActiveParticles.ToList())
             p.Update();
 
-        // foreach (var go in Game.GetGameObjects())
-        // {
-        //     if (go is not UserInterface ui) continue;
-        //     if (go is UIElement) continue;
-        //     ui.Update();
-        // }
-
-
-
-        // var interactable = player.GetInteractableTile();
-        // if (interactable != null && interactable.userInterface != null && interactable.userInterface.IsOpen())
-        //     interactable.userInterface.Update();
-
-        Game.GetGameObjects().RemoveAll(go => (go is DroppedItem d && d.pickedUp) || go.shouldBeDestroyed);
-        Game.GetEntities().RemoveAll(go => (go is DroppedItem d && d.pickedUp) || go.shouldBeDestroyed);
+        // Game.GetGameObjects().RemoveAll(go => (go is DroppedItem d && d.pickedUp) || go.shouldBeDestroyed);
     }
 
     float zoom = CameraSystem.Instance.GetCamera().Zoom;
@@ -240,7 +227,7 @@ public class MainScene : Scene
         Raylib.BeginTextureMode(CameraSystem.Instance.pixelPerfectTargetTexture);
         DayNightSystem.Instance.DrawSkyBackground();
         DayNightSystem.Instance.Draw();
-        ParallaxHandler.Draw();
+        // ParallaxHandler.Draw();
         Raylib.BeginMode2D(CameraSystem.Instance.GetCamera());
 
         DrawInOrder();
@@ -251,12 +238,16 @@ public class MainScene : Scene
         Raylib.EndTextureMode();
         LightingSystem.Instance.KawaseBlurPass(CameraSystem.Instance.pixelPerfectTargetTexture, rndtxt, 1.2f);
         LightingSystem.Instance.KawaseBlurPass(rndtxt, rndtxt2, 1.2f);
+        LightingSystem.Instance.KawaseBlurPass(rndtxt2, rndtxt, 1.2f);
+        LightingSystem.Instance.KawaseBlurPass(rndtxt, rndtxt2, 1.2f);
 
         Raylib.BeginDrawing();
         Raylib.DrawTexturePro(CameraSystem.Instance.pixelPerfectTargetTexture.Texture, CameraSystem.Instance.sourceRec, CameraSystem.Instance.destRec, Vector2.Zero, 0.0f, Color.White);
         Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
         Raylib.DrawTexturePro(rndtxt2.Texture, CameraSystem.Instance.sourceRec, CameraSystem.Instance.destRec, Vector2.Zero, 0, new Color(255, 255, 255, 65));
         Raylib.EndBlendMode();
+
+        #region UI DRAWING
         zoom = RayGui.GuiSlider(new Raylib_CsLo.Rectangle(50, 100, 100, 10), "Zoom", $"{zoom}", zoom, 0.01f, 2);
         CameraSystem.Instance.SetZoom(zoom);
         Raylib.DrawText($"{DayNightSystem.Instance.GetCurrentTime() / DayNightSystem.TimeScale}", 50, 400, 20, Color.Black);
@@ -289,6 +280,7 @@ public class MainScene : Scene
         DrawCursor();
 
         Raylib.DrawFPS(10, 10);
+        #endregion
         Raylib.EndDrawing();
         if (shouldExit)
         {
@@ -329,9 +321,6 @@ public class MainScene : Scene
             }
         }
 
-        foreach (var p in ParticlePool.ActiveParticles)
-            p.Draw();
-
         foreach (var obj in Game.GetGameObjects().ToList())
         {
             if (obj is Tile)
@@ -359,6 +348,9 @@ public class MainScene : Scene
             //     Raylib.DrawRectangleLinesEx(item.GetComponent<Collider>().boxCollider, 1, Color.DarkBlue);
             // }
         }
+        foreach (var p in ParticlePool.ActiveParticles)
+            p.Draw();
+
     }
 
     #region Saving session
@@ -383,7 +375,7 @@ public class MainScene : Scene
         session.Save.PlayerX = player.transform.position.X;
         session.Save.PlayerY = player.transform.position.Y;
 
-        SaveSystem.Save(session.Save);
+        SaveSystem.SaveGameWithState(session.Save, player);
     }
     #endregion
 }

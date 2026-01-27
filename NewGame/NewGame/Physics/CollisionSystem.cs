@@ -9,7 +9,7 @@ public class CollisionSystem
     public void Update()
     {
         dynamicSpatialHash.Clear();
-        foreach (var e in Game.GetEntities())
+        foreach (var e in Game.GetGameObjects().Where(g => g is Entity).ToList())
         {
             var c = e.GetComponentFast<Collider>();
             var pb = e.GetComponentFast<PhysicsBody>();
@@ -22,7 +22,7 @@ public class CollisionSystem
             dynamicSpatialHash.Insert(e);
         }
 
-        foreach (var obj in Game.GetEntities())
+        foreach (var obj in Game.GetGameObjects().Where(g => g is Entity).ToList())
         {
             var collider = obj.GetComponentFast<Collider>();
             var physicsBody = obj.GetComponentFast<PhysicsBody>();
@@ -40,11 +40,11 @@ public class CollisionSystem
 
             obj.transform.Translate(new Vector2(0, move.Y));
             collider.UpdateBounds(obj.transform.position);
-            HandleCollisions(obj, physicsBody, collider, Axis.Y, ref currentCollisions);
+            HandleCollisions((Entity)obj, physicsBody, collider, Axis.Y, ref currentCollisions);
 
             obj.transform.Translate(new Vector2(move.X, 0));
             collider.UpdateBounds(obj.transform.position);
-            HandleCollisions(obj, physicsBody, collider, Axis.X, ref currentCollisions);
+            HandleCollisions((Entity)obj, physicsBody, collider, Axis.X, ref currentCollisions);
 
             foreach (var other in obj.collidingWith)
             {
@@ -65,6 +65,8 @@ public class CollisionSystem
 
     private void HandleCollisions(Entity obj, PhysicsBody physicsBody, Collider collider, Axis axis, ref HashSet<Collider> currentCollisions)
     {
+        if (collider.should_NOT_Have_Collisionsbaby) return;
+
         foreach (var otherObj in dynamicSpatialHash.QueryNearby(obj).Concat(staticSpatialHash.QueryNearby(obj)))
         {
             if (otherObj == obj) continue;
@@ -137,7 +139,7 @@ public class CollisionSystem
                     collider.UpdateBounds(tile.transform.position);
                     staticSpatialHash.Insert(tile);
                 }
-            }
+            }   
         }
     }
 
@@ -145,7 +147,7 @@ public class CollisionSystem
     {
         staticSpatialHash.Clear();
 
-        foreach (var e in Game.GetEntities())
+        foreach (var e in Game.GetGameObjects().Where(g => g is Entity).ToList())
         {
             var pos = e.transform.position;
             var tileX = (int)MathF.Floor(pos.X / Core.UNIT_SIZE);
@@ -185,6 +187,11 @@ public class CollisionSystem
     public void RemoveTileFromSpatialHash(GameObject tile)
     {
         staticSpatialHash.Remove(tile);
+    }
+
+    public void RemoveEntityFromSpatialHash(GameObject entity)
+    {
+        dynamicSpatialHash.Remove(entity);
     }
 
     private enum Axis { X, Y }

@@ -5,9 +5,9 @@ out vec4 finalColor;
 
 uniform sampler2D scene;
 
-// NEW
-uniform vec2 sunPos;   // screen-space sun position
-uniform vec2 dir;      // normalized direction vector
+
+uniform vec2 sunPos;   
+uniform vec2 dir;      
 
 uniform float density;
 uniform float weight;
@@ -17,7 +17,6 @@ void main()
 {
     vec2 uv = fragTexCoord;
 
-    // direction is already normalized and passed from C#
     vec2 delta = dir * density;
     
     float w = weight / float(samples);

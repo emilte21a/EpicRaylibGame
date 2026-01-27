@@ -6,7 +6,7 @@ public class ItemData
     public short id { get; set; }
     public string name { get; set; }
     public string texturePath { get; set; }
-    public string tileType { get; set; }
+    public string? tileType { get; set; }
     public Dictionary<short, int> recipe { get; set; }
     public string description { get; set; }
     public bool placeable { get; set; }

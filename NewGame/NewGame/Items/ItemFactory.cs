@@ -112,6 +112,9 @@ public static class ItemFactory
         Tool tool = data.toolType?.ToLowerInvariant() switch
         {
             "silverpickaxe" => new SilverPickaxe(damage, speed),
+            "silversword" => new SilverSword(damage, speed),
+            "woodenpickaxe" => new WoodenPickaxe(damage, speed),
+            "flamestaff" => new FlameStaff(damage, speed),
             _ => throw new Exception($"Unknown tool type: {data.toolType}")
         };
 
@@ -136,10 +139,13 @@ public static class ItemFactory
         wood = 7,
         sapling = 8,
         silverore = 9,
-        silverPickaxe = 10,
+        silverpickaxe = 10,
         coalore = 11,
         copperingot = 12,
-        silverIngot = 13,
-        workbench = 14
+        silveringot = 13,
+        workbench = 14,
+        silversword = 15,
+        woodenpickaxe = 16,
+        flamestaff = 17
     }
 }

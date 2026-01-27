@@ -17,6 +17,7 @@ public static class ParticlePool
         p.isActive = false;
         ActiveParticles.Remove(p);
         inactive.Push(p);
+        p.GetComponentFast<Lightsource>().light.SetBrightness(0);
     }
 
     public static void EmitParticles(int amount, Vector2 velocity, Color color, Color lightColor, float lifeTime, int size, int brightness, Vector2 position, Vector2 offset, bool randomVelocity)

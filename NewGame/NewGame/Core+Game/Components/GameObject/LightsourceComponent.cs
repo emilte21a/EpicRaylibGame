@@ -18,4 +18,11 @@ public class Lightsource : Component
         light.SetColor(color);
     }
 
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        light.SetBrightness(0);
+    }
+
+    
 }

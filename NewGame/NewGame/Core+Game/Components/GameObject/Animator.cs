@@ -4,7 +4,7 @@ public class Animator : Component
     private float _timer;
     private int _maxTime = 2;
 
-    public void PlayAnimation(Texture2D spriteSheet, int direction, int maxFrames, Vector2 position)
+    public void PlayAnimation(Texture2D spriteSheet, int direction, int maxFrames, Vector2 position, Rectangle dest)
     {
         _timer += Raylib.GetFrameTime() * 10;
 
@@ -15,6 +15,8 @@ public class Animator : Component
         }
         _frame %= maxFrames;
 
-        Raylib.DrawTextureRec(spriteSheet, new Rectangle(_frame * spriteSheet.Width / maxFrames, 0, spriteSheet.Width / maxFrames * direction, spriteSheet.Height), position, Color.White);
+        var src = new Rectangle(_frame * spriteSheet.Width / maxFrames, 0, spriteSheet.Width / maxFrames * direction, spriteSheet.Height);
+        
+        Raylib.DrawTexturePro(spriteSheet,src, dest, Vector2.Zero,0,Color.White);
     }
 }

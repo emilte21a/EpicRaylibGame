@@ -27,7 +27,6 @@ public abstract class UserInterface : GameObject
     {
         isOpen = false;
         Console.WriteLine("Closed Interface");
-
     }
 
     public bool IsOpen()

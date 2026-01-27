@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.ComponentModel.DataAnnotations;
 
 public static class SlotUtils
@@ -13,9 +16,12 @@ public static class SlotUtils
     }
 
     // Returns true if any open interface exists other than the provided one
-    public static bool AnyOtherInterfaceOpen(UserInterface except)
+    public static bool AnyOtherInterfaceOpen(IEnumerable<UserInterface> except)
     {
-        return activeInterfaces.Any(u => u != null && u != except && u.IsOpen());
+        return activeInterfaces.Any(ui =>
+       ui != null &&
+       ui.IsOpen() &&
+       !except.Contains(ui));
     }
 
     public static bool TryPlaceItemInSlot(Slot targetSlot, int amountToDropInSlot)
@@ -42,8 +48,8 @@ public static class SlotUtils
                 return false;
             }
         }
-        
-        if (!targetSlot.CanAcceptItem(hoveredSlot!.itemInSlot!)) return false;
+
+        if (hoveredSlot != null && !targetSlot.CanAcceptItem(hoveredSlot!.itemInSlot!)) return false;
 
         var draggedItem = UIDragContext.draggedItem!;
         var draggedCount = UIDragContext.draggedCount;
@@ -91,6 +97,7 @@ public static class SlotUtils
         else
         {
             targetSlot.itemInSlot = draggedItem;
+            targetSlot.amount = 0;
             targetSlot.amount += amountToDropInSlot;
             draggedCount -= amountToDropInSlot;
             UIDragContext.draggedCount = draggedCount;
@@ -147,7 +154,6 @@ public static class SlotUtils
             }
 
             // ui.isHovering = hoveredSlot != null;
-
 
             bool left = Raylib.IsMouseButtonPressed(MouseButton.Left);
             bool right = Raylib.IsMouseButtonPressed(MouseButton.Right);

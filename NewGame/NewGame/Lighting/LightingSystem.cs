@@ -15,7 +15,6 @@ public class LightingSystem
 
     private RenderTexture2D lightingTexture;
 
-    // Use a small value struct instead of tuple for dictionary values
     private struct LightValue
     {
         public int r, g, b, total;
@@ -32,7 +31,6 @@ public class LightingSystem
     private Dictionary<(int x, int y), LightValue> globalLightMap = new Dictionary<(int, int), LightValue>(4096);
     private Dictionary<(int x, int y), Color> computedLightmap = new Dictionary<(int, int), Color>(4096);
 
-    // reusable BFS queue
     private Queue<LightNode> bfsQueue = new Queue<LightNode>(8192);
 
     private const int MAX_QUEUE_SIZE = 100000;
@@ -44,16 +42,12 @@ public class LightingSystem
     int uResolutionLoc;
     int uOffsetLoc;
 
-    // static direction arrays so we don't allocate them every frame
     private static readonly int[] dx = [-1, 1, 0, 0];
     private static readonly int[] dy = [0, 0, -1, 1];
 
     RenderTexture2D godrayTexture;
-
-    // occlusion (blocking) render target
     RenderTexture2D occlusionTexture;
 
-    // godray shader & uniform locations
     Shader godrayOcclusionShader;
     int uLightPosLoc, uExposureLoc, uDecayLoc, uDensityLoc, uWeightLoc, uSamplesLoc;
     int uSceneTexLoc, uOccTexLoc;
@@ -66,7 +60,6 @@ public class LightingSystem
         lightingTexture = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
         Raylib.SetTextureFilter(lightingTexture.Texture, TextureFilter.Point);
 
-        // Load Kawase blur shader
         kawaseShader = Raylib.LoadShader(null, "Shaders/kawase_blur.fs");
         Console.WriteLine("Shader Loaded? " + (kawaseShader.Id != 0));
 
@@ -76,17 +69,13 @@ public class LightingSystem
         Vector2 res = new(pp.Texture.Width, pp.Texture.Height);
         Raylib.SetShaderValue(kawaseShader, uResolutionLoc, res, ShaderUniformDataType.Vec2);
 
-        // Create two ping-pong blur buffers
         blurA = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
         blurB = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
 
-        // Occlusion target
         occlusionTexture = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
         godrayTexture = Raylib.LoadRenderTexture(pp.Texture.Width, pp.Texture.Height);
-        // Godray shader that uses occlusion
         godrayOcclusionShader = Raylib.LoadShader(null, "Shaders/godrays_occlusion.fs");
 
-        // Uniform locations (some backends use names; Raylib returns location ints)
         uSceneTexLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "sceneTex");
         uOccTexLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "occlusionTex");
         uLightPosLoc = Raylib.GetShaderLocation(godrayOcclusionShader, "lightPos");
@@ -99,15 +88,12 @@ public class LightingSystem
 
     public void Update()
     {
-        // Recompute the globalLightMap from scratch each frame for now.
-        // (Later: maintain dirty chunk set and only update changed chunks.)
         globalLightMap.Clear();
         bfsQueue.Clear();
 
         var visibleChunks = WorldGeneration.Instance.visibleChunks;
         var chunkMap = WorldGeneration.Instance.chunkMap;
 
-        // 1) SKY LIGHT
         float skylightBrightness = (int)(Core.MAX_BRIGHTNESS * DayNightSystem.Instance.GetSkyLightMultiplier());
 
         foreach (var chunkIndex in visibleChunks)
@@ -154,6 +140,44 @@ public class LightingSystem
             bfsQueue.Enqueue(new LightNode(gx, gy, brightness, color));
         }
 
+        var projectiles = ProjectilePool.ActiveProjectiles;
+        for (int i = 0; i < projectiles.Count; i++)
+        {
+            var p = projectiles[i];
+
+            if (p == null || !p.isActive || p.lightSource == null || p.lightSource.light.GetBrightness() <= 0) continue;
+
+            int gx = (int)MathF.Floor(p.transform.position.X / Core.UNIT_SIZE);
+            int gy = (int)MathF.Floor(p.transform.position.Y / Core.UNIT_SIZE);
+            int brightness = p.lightSource.light.GetBrightness();
+            var color = p.lightSource.light.GetColor();
+
+            var key = (gx, gy);
+            globalLightMap[key] = new LightValue(color.R, color.G, color.B, brightness);
+            bfsQueue.Enqueue(new LightNode(gx, gy, brightness, color));
+
+        }
+
+        foreach (var chunkIndex in visibleChunks)
+        {
+            if (!WorldGeneration.Instance.chunkMap.TryGetValue(chunkIndex, out var chunk)) continue;
+
+            foreach (var tile in chunk.tileMap)
+            {
+                var lightSource = tile.Value.GetComponentFast<Lightsource>();
+                if (lightSource == null) continue;
+
+                int gx = (int)MathF.Floor(tile.Value.transform.position.X / Core.UNIT_SIZE);
+                int gy = (int)MathF.Floor(tile.Value.transform.position.Y / Core.UNIT_SIZE);
+                int brightness = lightSource.light.GetBrightness();
+                var color = lightSource.light.GetColor();
+
+                var key = (gx, gy);
+                globalLightMap[key] = new LightValue(color.R, color.G, color.B, brightness);
+                bfsQueue.Enqueue(new LightNode(gx, gy, brightness, color));
+            }
+        }
+
         while (bfsQueue.Count > 0 && bfsQueue.Count < MAX_QUEUE_SIZE)
         {
             var node = bfsQueue.Dequeue();
@@ -183,12 +207,14 @@ public class LightingSystem
                 int newLight = light - propagation;
                 if (newLight <= 0) continue;
 
+                float factor = newLight / (float)Core.MAX_BRIGHTNESS;
+                int rr = (int)Math.Clamp(color.R * factor, 0, 255);
+                int gg = (int)Math.Clamp(color.G * factor, 0, 255);
+                int bb = (int)Math.Clamp(color.B * factor, 0, 255);
+
+
                 if (!globalLightMap.TryGetValue(nkey, out var cur) || newLight > cur.total)
                 {
-                    float factor = newLight / (float)Core.MAX_BRIGHTNESS;
-                    int rr = (int)Math.Clamp(color.R * factor, 0, 255);
-                    int gg = (int)Math.Clamp(color.G * factor, 0, 255);
-                    int bb = (int)Math.Clamp(color.B * factor, 0, 255);
                     globalLightMap[nkey] = new LightValue(rr, gg, bb, newLight);
                     bfsQueue.Enqueue(new LightNode(nx, ny, newLight, color));
                 }
@@ -297,19 +323,34 @@ public class LightingSystem
         Raylib.BeginBlendMode(BlendMode.Additive);
         Raylib.BeginMode2D(camera);
 
-        foreach (var p in ParticlePool.ActiveParticles)
+        foreach (var particle in ParticlePool.ActiveParticles)
         {
-            if (p == null || !p.isActive) continue;
+            if (particle == null || !particle.isActive) continue;
 
-            int brightness = p.lightSource?.light.GetBrightness() ?? 0;
+            int brightness = particle.lightSource?.light.GetBrightness() ?? 0;
             if (brightness <= 0) continue;
 
             float radius = brightness;
 
-            byte alpha = (byte)Math.Clamp((1 - p.age) * 255, 0, 255);
-            Color col = new Color(p.lightColor.R, p.lightColor.G, p.lightColor.B, alpha);
+            byte alpha = (byte)Math.Clamp((1 - brightness / Core.MAX_BRIGHTNESS) * 255, 0, 255);
+            Color col = new Color(particle.lightColor.R, particle.lightColor.G, particle.lightColor.B, alpha);
 
-            Raylib.DrawCircleGradient((int)(p.transform.position.X + p.GetSize() / 2), (int)(p.transform.position.Y + p.GetSize() / 2), radius, col, Color.Blank);
+            Raylib.DrawCircleGradient((int)(particle.transform.position.X + particle.GetSize() / 2), (int)(particle.transform.position.Y + particle.GetSize() / 2), radius, col, Color.Blank);
+        }
+
+        foreach (var projectile in ProjectilePool.ActiveProjectiles)
+        {
+            if (projectile == null || !projectile.isActive) continue;
+
+            int brightness = projectile.lightSource?.light.GetBrightness() ?? 0;
+            if (brightness <= 0) continue;
+
+            float radius = brightness;
+
+            byte alpha = (byte)Math.Clamp((1 - brightness / Core.MAX_BRIGHTNESS) * 255, 0, 255);
+            Color col = new Color(projectile.lightColor.R, projectile.lightColor.G, projectile.lightColor.B, alpha);
+
+            Raylib.DrawCircleGradient((int)(projectile.transform.position.X + projectile.GetSize() / 2), (int)(projectile.transform.position.Y + projectile.GetSize() / 2), radius, col, Color.Blank);
         }
 
         Raylib.EndMode2D();
@@ -320,8 +361,10 @@ public class LightingSystem
 
     public void PerformKawaseRenderPass()
     {
-        KawaseBlurPass(lightingTexture, blurA, 1.5f);
-        KawaseBlurPass(blurA, blurB, 1.5f);
+        KawaseBlurPass(lightingTexture, blurA, 2f);
+        KawaseBlurPass(blurA, blurB, 2f);
+        KawaseBlurPass(blurB, blurA, 2f);
+        KawaseBlurPass(blurA, blurB, 2f);
     }
 
     public void Draw()

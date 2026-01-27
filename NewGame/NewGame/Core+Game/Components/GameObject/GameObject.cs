@@ -4,7 +4,7 @@ public abstract class GameObject
     // public int ID;
     public Transform transform;
     public HashSet<Collider> collidingWith = [];
-    public bool shouldBeDestroyed = false;
+    private bool shouldBeDestroyed = false;
 
     private List<Component> _components;
 
@@ -24,12 +24,9 @@ public abstract class GameObject
         if (_components.OfType<T>().Any()) return;
 
         var comp = new T();
-        // ensure component knows its parent and is initialized immediately
         comp.SetParent(this);
         _components.Add(comp);
-        // run component Start so it can initialize internal state (e.g. Light)
         comp.Start();
-        // keep cache consistent
         _componentCache[typeof(T)] = comp;
     }
 
@@ -53,14 +50,23 @@ public abstract class GameObject
     public virtual void Start()
     {
         Game.AddGameObjectToGame(this);
-        _components.ForEach(c => c.Start());
+        _components.ForEach(c =>
+        {
+            // c.SetParent(this);
+            // c.Start();
+        });
     }
 
     public virtual void Update()
     {
+        if (shouldBeDestroyed)
+        {
+            OnDestroy();
+            return;
+        }
+
         _components.ForEach(c =>
         {
-            c.SetParent(this);
             c.Update();
         }
         );
@@ -68,7 +74,52 @@ public abstract class GameObject
 
     public virtual void Draw()
     {
+    }
 
+    private void DestroyNow()
+    {
+        // Call OnDestroy on all components
+        foreach (var component in _components)
+        {
+            component.OnDestroy();
+        }
+
+        // Remove from spatial hashes
+        if (this is Tile)
+        {
+            CollisionSystem.Instance.RemoveTileFromSpatialHash(this);
+        }
+        else if (this is Entity)
+        {
+            CollisionSystem.Instance.RemoveEntityFromSpatialHash(this);
+        }
+
+        // Remove from game object lists
+        Game.RemoveGameObject(this);
+
+        // Clear components
+        _components.Clear();
+        _componentCache.Clear();
+    }
+
+    public virtual void OnDestroy()
+    {
+        DestroyNow();
+    }
+
+    private void ClearComponents()
+    {
+        // Call cleanup on all components that need it
+        foreach (var component in _components)
+        {
+            if (component is Lightsource lightsource)
+            {
+                lightsource.light.SetBrightness(0);
+            }
+        }
+
+        _components.Clear();
+        _componentCache.Clear();
     }
 
     public virtual Action? OnCollisionEnter(Collider other)
@@ -102,5 +153,8 @@ public abstract class GameObject
         return 0;
     }
 
-
+    public void MarkForDestruction()
+    {
+        shouldBeDestroyed = true;
+    }
 }

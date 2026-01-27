@@ -5,7 +5,7 @@ public class PhysicsSystem
     {
         float deltaTime = Raylib.GetFrameTime();
 
-        foreach (var e in Game.GetEntities())
+        foreach (var e in Game.GetGameObjects().Where(g => g is Entity).ToList())
         {
             var physicsBody = e.GetComponentFast<PhysicsBody>();
             if (physicsBody == null || !physicsBody.useGravity) continue;
@@ -13,11 +13,11 @@ public class PhysicsSystem
             var collider = e.GetComponentFast<Collider>();
             if (collider.colliderType == ColliderType.Static) continue;
 
-            physicsBody.acceleration = physicsBody.gravity * deltaTime * physicsBody.weight;
+            physicsBody.acceleration = physicsBody.gravity * deltaTime;
 
             if (physicsBody.useGravity)
-                physicsBody.velocity.Y += physicsBody.acceleration.Y * (int)physicsBody.physicsContext;
-
+                physicsBody.velocity.Y += physicsBody.acceleration.Y * (int)physicsBody.physicsContext * physicsBody.weight;
+            
             //Clampa maxhastigheten 
             physicsBody.velocity.Y = Raymath.Clamp(physicsBody.velocity.Y, -terminalVelocity, terminalVelocity);
 

@@ -31,6 +31,7 @@ public class DroppedItem : Entity
         base.Update();
         age += Raylib.GetFrameTime();
         physicsBody.velocity.X = Raymath.Lerp(physicsBody.velocity.X, 0, Raylib.GetFrameTime());
+        if (pickedUp) MarkForDestruction();
     }
 
     public override void Draw()

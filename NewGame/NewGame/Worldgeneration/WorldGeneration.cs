@@ -3,7 +3,7 @@ using System.Text.Json;
 public class WorldGeneration
 {
     public Dictionary<(int, int), Chunk> chunkMap = [];
-    public Player? playerRef { get; set; }
+    private Player? playerRef;
 
     public int chunkSize = Core.CHUNK_SIZE;
     public float leftLimit = 0;
@@ -13,7 +13,7 @@ public class WorldGeneration
 
     public int seed;
 
-    private int generationDistance = 2;
+    private int generationDistance = 3;
 
     public List<(int, int)> visibleChunks = [];
 
@@ -29,6 +29,7 @@ public class WorldGeneration
 
     public void InitializeSeed(int? initialSeed = null)
     {
+        playerRef = Game.player;
         if (initialSeed != null)
             seed = (int)initialSeed;
 
@@ -38,7 +39,9 @@ public class WorldGeneration
             Console.WriteLine("initial seed is null and is given a new one: " + seed);
         }
 
-        InitializeChunks(7);
+        // Only initialize nearby chunks (use generationDistance) to avoid immediately
+        // creating then unloading a large area which marks many tiles for destruction.
+        InitializeChunks(generationDistance);
     }
 
     public void InitializeChunks(int chunkAmount)
@@ -174,7 +177,7 @@ public class WorldGeneration
         if (chunkEntry.Value == null)
             return false;
 
-        surfaceIndex = chunkEntry.Value.EvaluateSurfaceWorldY(worldTileX);
+        surfaceIndex = Chunk.EvaluateSurfaceWorldY(worldTileX);
         return true;
     }
 
@@ -252,7 +255,10 @@ public class WorldGeneration
                 // Create tile
                 var tile = TileFactory.CreateTileFromID(dto.TileId, tileKey);
 
-                if (tile is MultiTilePart) continue;
+                if (tile is MultiTile mt)
+                {
+                    chunk.PlaceMultiTile(mt, (int)mt.transform.position.X, (int)mt.transform.position.Y);
+                }
 
                 if (tile != null)
                 {

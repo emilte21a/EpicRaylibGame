@@ -32,23 +32,24 @@ public static class ParallaxHandler
 
         foreach (var p in parallaxLayers)
         {
-            p.transform.position = new Vector2(0, Raymath.Lerp(p.transform.position.Y, 0, Raylib.GetFrameTime() * p.factor));
             p.rectangle.X = cameraX * p.factor / 500;
-            Raylib.DrawTextureRec(p.GetComponent<Renderer>().sprite, p.rectangle, p.transform.position, Color.White);
+            p.rectangle.Y = (int)Raymath.Lerp(p.transform.position.Y, 300 - (cam.Target.Y / Core.UNIT_SIZE / Core.CHUNK_SIZE), p.factor);
+            Raylib.DrawTexturePro(p.GetComponent<Renderer>().sprite, p.rectangle,
+            new Raylib_cs.Rectangle(0, 0, CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Width, CameraSystem.Instance.pixelPerfectTargetTexture.Texture.Height), Vector2.Zero, 0, Color.White);
         }
     }
 
     public static void DrawOcclusionMask()
     {
-        Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
-        var cam = CameraSystem.Instance.GetPixelPerfectCamera();
-        float cameraX = cam.Target.X;
-        foreach (var p in parallaxLayers)
-        {
-            p.transform.position = new Vector2(0, Raymath.Lerp(p.transform.position.Y, 0, Raylib.GetFrameTime() * p.factor));
-            p.rectangle.X = cameraX * p.factor / 500;
-            Raylib.DrawTextureRec(p.GetComponent<Renderer>().sprite, p.rectangle, p.transform.position, Color.White);
-        }
-        Raylib.EndBlendMode();
+        // Raylib.BeginBlendMode(Raylib_cs.BlendMode.Alpha);
+        // var cam = CameraSystem.Instance.GetPixelPerfectCamera();
+        // float cameraX = cam.Target.X;
+        // foreach (var p in parallaxLayers)
+        // {
+        //     p.transform.position = new Vector2(0, Raymath.Lerp(p.transform.position.Y, 0, Raylib.GetFrameTime() * p.factor));
+        //     p.rectangle.X = cameraX * p.factor / 500;
+        //     Raylib.DrawTextureRec(p.GetComponent<Renderer>().sprite, p.rectangle, p.transform.position, Color.White);
+        // }
+        // Raylib.EndBlendMode();
     }
 }

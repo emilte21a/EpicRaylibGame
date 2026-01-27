@@ -151,3 +151,12 @@ public class CraftingSlot : Slot
         }
     }
 }
+
+public class AccessorySlot : Slot
+{
+    
+    public AccessorySlot(Item? itemInSlot) : base(itemInSlot)
+    {
+        
+    }
+}

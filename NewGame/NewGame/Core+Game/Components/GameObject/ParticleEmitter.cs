@@ -7,7 +7,7 @@ public class ParticleEmitter : Component
     public Color color = Color.White;
     public Color lightColor = Color.White;
     public int particleAmount = 1;
-    public int yVelocity = -10;
+    public Vector2 velocity = new(0, -10);
     public int perlinFrequency = 1;
     public int brightness = Core.MAX_BRIGHTNESS;
     public float lifeTime = 100;
@@ -31,20 +31,21 @@ public class ParticleEmitter : Component
         if (!CanEmit())
             return;
 
-        EmitParticles(perlinFrequency, yVelocity, particleAmount, true, offset);
+        EmitParticles(perlinFrequency, velocity, particleAmount, true, offset);
         ResetCooldown();
     }
 
-    public void EmitParticles(float perlinFrequency, float yVelocity, int particleAmount, bool randomVelocity, Vector2 offset)
+    public void EmitParticles(float? perlinFrequency, Vector2 velocity, int particleAmount, bool randomVelocity, Vector2 offset)
     {
         for (int i = 0; i < particleAmount; i++)
         {
             var perlin = new Perlin();
-            perlin.Frequency = perlinFrequency;
-            Vector2 velocity = new Vector2(
-                (float)perlin.GetValue(i, 0, 0),
-                yVelocity
-            );
+            if (perlinFrequency != null)
+            {
+                perlin.Frequency = (double)perlinFrequency;
+                velocity.X += (float)perlin.GetValue(i, 0, 0);
+            }
+
 
             ParticlePool.EmitParticles(
                 1,

@@ -19,7 +19,7 @@ public sealed class Player : Entity
     float pickupDistance = 5;
     float interactionRange = 4;
 
-    float actionCooldown = 0.2f;
+    float actionCooldown = 0.6f;
     float actionTimer = 0;
     bool canPerformAction = true;
 
@@ -34,9 +34,16 @@ public sealed class Player : Entity
 
     bool creativeMode = false;
 
+    PlayerState playerState = PlayerState.idle;
+
+    Animator? animator;
+
+    Dictionary<PlayerState, Texture2D> playerTextures = [];
+
     public Player()
     {
         originalColor = Color.Blue;
+        transform.position = new Vector2(0, Chunk.EvaluateSurfaceWorldY(0));
     }
 
     public override void Start()
@@ -51,6 +58,12 @@ public sealed class Player : Entity
         collider.boxCollider.Height *= 2;
         collider.interactableByEntities = false;
         physicsBody!.weight = 15;
+
+        AddComponent<Animator>();
+        animator = GetComponent<Animator>();
+
+        playerTextures.Add(PlayerState.idle, TextureManager.LoadTexture("Textures/characteridle.png"));
+        renderer!.sprite = playerTextures[playerState];
     }
 
     public void SetPlayerPos(Vector2? pos)
@@ -73,7 +86,7 @@ public sealed class Player : Entity
         Tool? tool = currentItem as Tool;
         if (tool != null)
         {
-            tool.swingDirection = GetLastDirection();
+            tool.useDirection = GetLastDirection();
             itemDamage = tool.damage;
             tool.Update();
         }
@@ -101,10 +114,17 @@ public sealed class Player : Entity
 
         if ((Raylib.IsMouseButtonPressed(MouseButton.Left) || Raylib.IsMouseButtonDown(MouseButton.Left)) && canPerformAction && !UIDragContext.isDragging)
         {
+
             PerformAction();
-            HandleTileDestruction();
             if (tool != null)
+            {
+                if (tool.toolVariant is ToolType.pickaxe)
+                    HandleTileDestruction();
+
                 tool.OnUse();
+            }
+            else
+                HandleTileDestruction();
         }
         if ((Raylib.IsMouseButtonPressed(MouseButton.Right) || Raylib.IsMouseButtonDown(MouseButton.Right)) && canPerformAction && !UIDragContext.isDragging)
         {
@@ -126,11 +146,13 @@ public sealed class Player : Entity
         {
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.torch));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.furnace));
-            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverPickaxe));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverpickaxe));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silversword));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.coalore));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.copperore));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.silverore));
             inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.workbench));
+            inventoryComponent.AddItem(ItemFactory.CreateItem((short)ItemFactory.ItemID.flamestaff));
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.K))
@@ -138,24 +160,39 @@ public sealed class Player : Entity
             var entity = new Entity();
             entity.transform.position = CameraSystem.Instance.GetMouseWorldPosition();
         }
-
     }
 
     public override void Draw()
     {
         base.Draw();
+
         if (currentItem is Tool tool)
         {
             var pos = new Vector2(transform.position.X + Core.UNIT_SIZE / 2 + tool.texture.Width / 4 * lastDirection, transform.position.Y + tool.texture.Height / 2) + new Vector2(tool.xSkew, tool.ySkew);
-
             Raylib.DrawTexturePro(
-     tool.texture,
-     new Rectangle(0, 0, tool.texture.Width * GetLastDirection(), tool.texture.Height),
-     new Rectangle(pos, tool.texture.Width, tool.texture.Height),
-     new Vector2(lastDirection == -1 ? tool.texture.Width : 0, tool.texture.Height),
-     tool.rotation,
-     Color.White);
+                tool.texture,
+                new Rectangle(0, 0, tool.texture.Width * GetLastDirection(), tool.texture.Height),
+                new Rectangle(pos, tool.texture.Width, tool.texture.Height),
+                new Vector2(lastDirection == -1 ? tool.texture.Width : 0, tool.texture.Height),
+                tool.rotation,
+                Color.White);
         }
+        // int numLines = 10;
+        // for (int i = 0; i < numLines; i++)
+        // {
+        //     Vector2 origin = transform.position + new Vector2(collider.boxCollider.Width / 2, collider.boxCollider.Height / 2);
+        //     float angle = (360f / numLines) * i;
+        //     // Convert to radians
+        //     float angleRad = angle * MathF.PI / 180f;
+
+        //     // Calculate endpoint using the angle
+        //     float xAdd = MathF.Cos(angleRad) * 100;
+        //     float yAdd = MathF.Sin(angleRad) * 100;
+
+        //     float y = origin.Y + yAdd;
+        //     float x = origin.X + xAdd;
+        //     Raylib.DrawLineV(origin, new Vector2(x, y), Color.Green);
+        // }
     }
 
     private void HandleMovement()
@@ -269,7 +306,7 @@ public sealed class Player : Entity
                 if (tile.hitsRequired <= 0)
                 {
                     Console.WriteLine("Destroyed: " + tile.tag);
-                    tile.OnDestruction();
+                    tile.OnDestroy();
                     chunk.MarkTileRemoved(tileKey);
                     if (tile is FurnaceTile furnaceTile && furnaceTile.userInterface != null)
                     {
@@ -569,7 +606,7 @@ public sealed class Player : Entity
 
     private void PerformAction()
     {
-        actionTimer = actionCooldown;
+        actionTimer = currentItem is Tool tool ? actionCooldown / tool.speed : actionCooldown;
     }
 
     public InteractableTile? GetInteractableTile()
@@ -577,7 +614,17 @@ public sealed class Player : Entity
         return interactableTile;
     }
 
-    private int GetLastDirection()
+    public Vector2 GetHeldItemPos()
+    {
+        if (currentItem is Tool tool)
+        {
+            var pos = new Vector2(transform.position.X + Core.UNIT_SIZE / 2 + tool.texture.Width / 4 * lastDirection, transform.position.Y + tool.texture.Height / 2) + new Vector2(tool.xSkew, tool.ySkew);
+            return pos;
+        }
+        return Vector2.Zero;
+    }
+
+    public int GetLastDirection()
     {
         return lastDirection;
     }
@@ -586,4 +633,12 @@ public sealed class Player : Entity
     {
         return physicsBody.velocity.Y == 0;
     }
+}
+
+enum PlayerState
+{
+    idle = 4,
+    running = 1,
+    walking = 2,
+    jumping = 3
 }

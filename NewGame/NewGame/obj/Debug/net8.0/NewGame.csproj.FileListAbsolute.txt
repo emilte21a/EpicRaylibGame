@@ -133,7 +133,6 @@ c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\D
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\treesapling.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\treestages.png
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\wood.png
-c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\ItemData.JSON
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\kawase_blur.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\normal_light.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\NewGame.exe
@@ -175,7 +174,6 @@ c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\D
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\bright_pass.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\godrays_occlusion.fs
-c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Shaders\shining_material.fs
 c:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\cursor.png
 C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\torchIcon.png
 C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\windowIcon.ico
@@ -183,3 +181,13 @@ C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\D
 C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\workbench.png
 C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\stonebrick.png
 C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\woodenpickaxe.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\fiber.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\silversword.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\characteridle.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\flamestaff.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\flamecrystal.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\emptystaff.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Items\ItemData.JSON
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\spellofdeath.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\fireparticle.png
+C:\Users\macho\OneDrive\Skrivbord\CVHemsida\EpicRaylibGame\NewGame\NewGame\bin\Debug\net8.0\Textures\particle.png

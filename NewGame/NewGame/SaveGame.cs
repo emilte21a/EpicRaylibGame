@@ -14,17 +14,18 @@ public class SaveGame
     public float PlayerY { get; set; }
     public int WorldSeed { get; set; }
 
-    // NOTE: use the Chunk DTO type you already have (nested in GameSaveManager in your earlier code)
+    // Inventory state
+    public InventoryComponent.InventoryStateDTO? PlayerInventory { get; set; }
+
+    // Chunk data including modified tiles with their component states
     public Dictionary<string, List<GameSaveManager.ChunkLoadedEntryDTO>> Chunks { get; set; }
         = new Dictionary<string, List<GameSaveManager.ChunkLoadedEntryDTO>>();
 }
 
 public static class SaveSystem
 {
-    // default to the same relative path pattern your previous manager used
     static string DefaultGamesFolder => Path.Combine(Environment.CurrentDirectory, "saves", "games");
 
-    // Load by id. Optional parameter lets you pass a different folder for tests / editor.
     public static SaveGame? Load(string id, string? gamesFolder = null)
     {
         var folder = gamesFolder ?? DefaultGamesFolder;
@@ -36,7 +37,19 @@ public static class SaveSystem
         return JsonSerializer.Deserialize<SaveGame>(json, options);
     }
 
-    // Save (creates folder if necessary). Optional folder override.
+    public static void LoadAndRestoreGame(string saveId, Player player)
+    {
+        var save = Load(saveId);
+        if (save == null) return;
+
+        // Restore player position
+        player?.SetPlayerPos(new Vector2(save.PlayerX, save.PlayerY));
+
+        // Restore inventory
+        if (save.PlayerInventory != null && player?.inventoryComponent != null)
+            player.inventoryComponent.FromDTO(save.PlayerInventory);
+    }
+
     public static void Save(SaveGame save, string? gamesFolder = null)
     {
         var folder = gamesFolder ?? DefaultGamesFolder;
@@ -44,6 +57,15 @@ public static class SaveSystem
         var path = Path.Combine(folder, $"{save.Id}.json");
         var options = new JsonSerializerOptions { WriteIndented = true };
         File.WriteAllText(path, JsonSerializer.Serialize(save, options));
+    }
+
+    public static void SaveGameWithState(SaveGame save, Player player)
+    {
+        // Capture player inventory
+        if (player?.inventoryComponent != null)
+            save.PlayerInventory = player.inventoryComponent.ToDTO();
+
+        Save(save);
     }
 }
 
@@ -60,6 +82,7 @@ public class GameSession
     public Vector2 PlayerStartPosition => new Vector2(Save.PlayerX, Save.PlayerY);
     public int Seed => Save.WorldSeed;
     public Dictionary<string, List<GameSaveManager.ChunkLoadedEntryDTO>> ChunkOverrides => Save.Chunks;
+
 
     public void ApplyChunkOverridesToChunk(Chunk chunk)
     {
@@ -92,9 +115,11 @@ public class GameSession
             var tile = TileFactory.CreateTileFromID(dto.TileId, tileIndex);
 
             if (tile is MultiTile mt)
-                mt.OnPlaced((int)mt.transform.position.X, (int)mt.transform.position.Y);
+            {
+                chunk.PlaceMultiTile(mt, (int)mt.transform.position.X, (int)mt.transform.position.Y);
+            }
 
-            System.Console.WriteLine(tile == null ? "tile is null" : "tile is not null");
+            Console.WriteLine(tile == null ? "tile is null" : "tile is not null");
             if (tile != null)
             {
                 tile.transform.position = new Vector2(
@@ -112,7 +137,7 @@ public class GameSession
                         f.FromDTO(dtoObj);
                 }
 
-                tile.Start();
+                // tile.Start();
 
                 var col = tile.GetComponentFast<Collider>();
                 if (col != null && col.isActive)

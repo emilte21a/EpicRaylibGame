@@ -30,14 +30,6 @@ public class InventoryComponent : Component
     public override void Update()
     {
         base.Update();
-        // foreach (var slot in inventorySlots)
-        // {
-        //     if (slot.amount < 0)
-        //     {
-        //         // slot.itemInSlot = null;
-        //         slot.amount = 0;
-        //     }
-        // }
     }
 
     public bool AddItem(Item item)

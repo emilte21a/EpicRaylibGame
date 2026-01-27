@@ -1,5 +1,7 @@
 using LibNoise.Combiner;
 using SharpNoise.Modules;
+using Shader = Raylib_cs.Shader;
+using ShaderUniformDataType = Raylib_cs.ShaderUniformDataType;
 
 public abstract class Tile : GameObject
 {
@@ -18,11 +20,12 @@ public abstract class Tile : GameObject
     public short tileId;
     private int dropAmount = 1;
     public virtual bool IsMultiTilePart => false;
-    float whiteOverlayOpacity = 0;
 
     public override void Start()
     {
         base.Start();
+
+
         TileFactory.AddTileToTileFactory(this);
 
         itemIdsDropAmounts = [];
@@ -44,6 +47,7 @@ public abstract class Tile : GameObject
         base.Draw();
         if (renderer != null && renderer.sprite.Width > 0)
         {
+            // bind this tile's texture to the shader before drawing so the shader can sample it
             var dst = new Rectangle(
                 collider.boxCollider.X + collider.boxCollider.Width / 2,
                 collider.boxCollider.Y + collider.boxCollider.Height / 2,
@@ -55,12 +59,6 @@ public abstract class Tile : GameObject
 
             var src = new Rectangle(0, 0, renderer.sprite.Width, renderer.sprite.Height);
             Raylib.DrawTexturePro(renderer.sprite, src, dst, origin, transform.zRotation, Color.White);
-            if (whiteOverlayOpacity > 0)
-            {
-                Raylib.BeginBlendMode(Raylib_cs.BlendMode.Additive);
-                Raylib.DrawRectangle((int)((int)dst.X - origin.X), (int)((int)dst.Y - origin.Y), (int)dst.Width, (int)dst.Height, new Color(255, 255, 255, 255 * whiteOverlayOpacity));
-                Raylib.EndBlendMode();
-            }
         }
         else
             Raylib.DrawRectangleRec(collider.boxCollider, color);
@@ -75,12 +73,12 @@ public abstract class Tile : GameObject
         );
         collider.boxCollider.X = transform.position.X;
         collider.boxCollider.Y = transform.position.Y;
-        transform.zRotation = (int)Raymath.Lerp(transform.zRotation, 0, Raylib.GetFrameTime() * 2);
-        whiteOverlayOpacity = Raymath.Lerp(whiteOverlayOpacity, 0, Raylib.GetFrameTime() * 40);
+        transform.zRotation = (int)Raymath.Lerp(transform.zRotation, 0, Raylib.GetFrameTime() / 10);
     }
 
-    public virtual void OnDestruction()
+    public override void OnDestroy()
     {
+        base.OnDestroy();
         Vector2 particleOffset = new Vector2(collider.boxCollider.Width / 2f, collider.boxCollider.Height / 2f);
         for (int i = 0; i < 10; i++)
         {
@@ -95,7 +93,6 @@ public abstract class Tile : GameObject
             {
                 var dropped = ItemFactory.CreateDroppedItem(item.Key, transform.position);
                 dropped.originalColor = color;
-                Game.AddEntityToGame(dropped);
                 dropped.Start();
                 Console.WriteLine("Dropped item created at " + dropped.transform.position);
             }
@@ -107,7 +104,6 @@ public abstract class Tile : GameObject
         int rand = Random.Shared.Next(-20, 20) > 0 ? 20 : -20;
 
         transform.zRotation = rand;
-        whiteOverlayOpacity = 1;
     }
 
     public virtual Tile Clone()
@@ -197,9 +193,11 @@ public class Torch : Tile
         animator = GetComponent<Animator>();
         color = new Color(120, 120, 120, 40);
 
+        var lightColor = new Color(255, 196, 119, 255);
+
         AddComponent<Lightsource>();
         lightsource = GetComponent<Lightsource>();
-        lightsource.color = color;
+        lightsource.color = lightColor;
         lightsource.light.SetBrightness(Core.MAX_BRIGHTNESS);
 
         AddComponent<ParticleEmitter>();
@@ -208,12 +206,12 @@ public class Torch : Tile
         {
             particleEmitter.offset = new Vector2(collider.boxCollider.Width / 2, collider.boxCollider.Height / 2 - 5);
             particleEmitter.color = color;
-            particleEmitter.lightColor = new Color(255, 196, 119, 255);
+            particleEmitter.lightColor = lightColor;
             particleEmitter.particleAmount = 4;
-            particleEmitter.yVelocity = -15;
+            particleEmitter.velocity.Y = -15;
             particleEmitter.perlinFrequency = 2;
-            particleEmitter.brightness = Core.MAX_BRIGHTNESS;
-            particleEmitter.particleSpawnDelay = 0.2f;
+            particleEmitter.brightness = 0;
+            particleEmitter.particleSpawnDelay = 0.5f;
             particleEmitter.lifeTime = 300;
             particleEmitter.size = Core.UNIT_SIZE / 3;
             particleEmitter.ResetCooldown();
@@ -238,7 +236,7 @@ public class Torch : Tile
 
     public override void Draw()
     {
-        animator.PlayAnimation(renderer.sprite, 1, 5, transform.position);
+        animator.PlayAnimation(renderer.sprite, 1, 5, transform.position, collider.boxCollider);
     }
 }
 
@@ -254,7 +252,7 @@ public class OreTile : Tile
         {
             particleEmitter.color = color;
             particleEmitter.particleAmount = 1;
-            particleEmitter.yVelocity = Random.Shared.Next(-1, 1);
+            particleEmitter.velocity.Y = Random.Shared.Next(-1, 1);
             particleEmitter.perlinFrequency = 10;
             particleEmitter.brightness = 1;
             particleEmitter.particleSpawnDelay = 7f + Random.Shared.Next(-1, 2);
@@ -309,6 +307,7 @@ public class MultiTile : Tile
 {
     public int widthInTiles = 1;
     public int heightInTiles = 1;
+    public int spriteWidthInTiles = 1;
 
     public int originTileX;
     public int originTileY;
@@ -483,16 +482,14 @@ public class WorkBench : InteractableTile
 
 public class TreeTile : MultiTile
 {
+    // static
+
     public TreeTile()
     {
-        widthInTiles = 1;   // tree occupies 1 tile for collision / logic
-        heightInTiles = 4;  // trunk height
-                            // how wide the sprite is visually (in tiles)
+        widthInTiles = 1;
+        heightInTiles = 4;
         spriteWidthInTiles = 3;
     }
-
-    // visual-only field
-    public int spriteWidthInTiles = 3;
     public int age = 0;
     private float ageTimer = 0;
 

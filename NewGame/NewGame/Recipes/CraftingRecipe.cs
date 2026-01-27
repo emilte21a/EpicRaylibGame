@@ -23,10 +23,16 @@ public class CraftingRecipe
 
 public static class CraftingRecipes
 {
-    public static List<CraftingRecipe> craftingRecipes = [
-        new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.workbench),
-        new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.torch)
-    ];
+    public static List<CraftingRecipe> craftingRecipes = [];
+
+    public static void Initialize()
+    {
+        craftingRecipes.Add(new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.workbench));
+        craftingRecipes.Add(new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.torch));
+        craftingRecipes.Add(new CraftingRecipe(CraftingTier.tier0, (short)ItemFactory.ItemID.woodenpickaxe));
+        craftingRecipes.Add(new CraftingRecipe(CraftingTier.tier1, (short)ItemFactory.ItemID.furnace));
+        craftingRecipes.Add(new CraftingRecipe(CraftingTier.tier2, (short)ItemFactory.ItemID.silverpickaxe));
+    }
 }
 
 public enum CraftingTier

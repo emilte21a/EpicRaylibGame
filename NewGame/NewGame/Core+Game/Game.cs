@@ -21,18 +21,18 @@ public class Game
     public static Rectangle screenRectangle;
 
     private static List<GameObject> gameObjects = [];
-    private static List<Entity> entities = [];
 
     private bool paused = false;
 
     Image icon;
+    public static Player? player;
 
     public Game()
     {
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-        icon = Raylib.LoadImage("Textures/windowIcon.ico");
+        Raylib.SetTargetFPS(300);
+        icon = Raylib.LoadImage("Textures/grass.png");
         Raylib.SetWindowIcon(icon);
-        // Raylib.UnloadImage(icon);
         Raylib.InitWindow(screenWidth, screenHeight, "Game");
         Raylib.SetConfigFlags(ConfigFlags.AlwaysRunWindow);
         // Raylib.ToggleFullscreen();
@@ -104,19 +104,9 @@ public class Game
         gameObjects.Add(gameObject);
     }
 
-    public static void AddEntityToGame(Entity entity)
-    {
-        entities.Add(entity);
-    }
-
     public static List<GameObject> GetGameObjects()
     {
         return gameObjects;
-    }
-
-    public static List<Entity> GetEntities()
-    {
-        return entities;
     }
 
     public static void RemoveGameObject(GameObject obj)

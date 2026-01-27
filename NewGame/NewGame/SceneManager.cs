@@ -14,13 +14,12 @@ public static class SceneManager
         try { WorldGeneration.Instance.UnloadAllChunks(); } catch { }
 
         // clear global references
-        WorldGeneration.Instance.playerRef = null;
+        Game.player = null;
         CollisionSystem.Instance.dynamicSpatialHash.Clear();
         CollisionSystem.Instance.staticSpatialHash.Clear();
 
         // clear game lists
         try { Game.GetGameObjects().Clear(); } catch { }
-        try { Game.GetEntities().Clear(); } catch { }
 
         // clear active particles
         try { ParticlePool.ActiveParticles.Clear(); } catch { }
@@ -39,7 +38,7 @@ public static class SceneManager
     {
         currentScene?.Update();
         currentScene?.Draw();
-       
+
     }
 
     public static void ChangeToScene(SCENE_NAME scene)

@@ -22,17 +22,26 @@ public class InventoryInterface : UserInterface, ISlotContainer
             slot.owner = this;
         }
         Initialize();
-        inventoryCraftingInterface = new InventoryCraftingInterface();
-        inventoryCraftingInterface.ownerInventory = this;
-        inventoryCraftingInterface.Start();
-        SlotUtils.AddInterface(this);
-        isOpen = true;
     }
 
     public override void Start()
     {
         base.Start();
         tag = "InventoryInterface";
+    }
+
+    public void InitializeInventoryInterface()
+    {
+        inventoryCraftingInterface = new InventoryCraftingInterface();
+        inventoryCraftingInterface.ownerInventory = this;
+        inventoryCraftingInterface.component = new WorkBenchComponent();
+
+        inventoryCraftingInterface.component.SetupComponent(CraftingTier.tier0);
+        
+        SlotUtils.AddInterface(this);
+        SlotUtils.AddInterface(inventoryCraftingInterface);
+        inventoryCraftingInterface.Initialize();
+        isOpen = true;
     }
 
     public override void Update()
@@ -64,7 +73,6 @@ public class InventoryInterface : UserInterface, ISlotContainer
             Raylib.DrawText(SlotUtils.hoveredSlot.itemInSlot.description, (int)SlotUtils.hoveredSlot.rectangle.X, (int)SlotUtils.hoveredSlot.rectangle.Y - 20, 20, Color.White);
         }
 
-        // draw crafting UI on top of inventory if present
         inventoryCraftingInterface?.Draw();
     }
     public void HandleHotbarInput()

@@ -93,13 +93,14 @@
         "texturePath": "Textures/silverpickaxe.png",
         "tileType": "",
         "recipe": {
-            "7": 1
+            "7": 2,
+            "13": 2
         },
         "description": "A pickaxe made of silver and wood",
         "placeable": false,
         "type": "Tool",
         "damage": 2.5,
-        "speed": 1.2,
+        "speed": 2,
         "toolType": "silverpickaxe"
     },
     {
@@ -139,5 +140,43 @@
         },
         "description": "A basic workbench made of wood",
         "placeable": true
+    },
+    {
+        "id": 15,
+        "name": "Silver Sword",
+        "texturePath": "Textures/silversword.png",
+        "recipe": {
+            "7": 2,
+            "13": 3
+        },
+        "description": "A sword made of silver and wood",
+        "type": "Tool",
+        "damage": 5,
+        "speed": 1.5,
+        "toolType": "silversword"
+    },
+    {
+        "id": 16,
+        "name": "Wooden Pickaxe",
+        "texturePath": "Textures/woodenpickaxe.png",
+        "recipe": {
+            "7": 3
+        },
+        "description": "A fragile pickaxe made from wood",
+        "type": "Tool",
+        "damage": 2,
+        "speed": 1.5,
+        "toolType": "woodenpickaxe"
+    },
+    {
+        "id": 17,
+        "name": "Flame Staff",
+        "texturePath": "Textures/flamestaff.png",
+        "recipe": {},
+        "description": "Flame staff",
+        "type": "Tool",
+        "damage": 10,
+        "speed": 1.5,
+        "toolType": "flamestaff"
     }
 ]

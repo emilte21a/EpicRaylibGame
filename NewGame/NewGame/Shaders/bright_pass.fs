@@ -4,7 +4,7 @@ in vec2 fragTexCoord;
 out vec4 fragColor;
 
 uniform sampler2D texture0;
-uniform float threshold;   // brightness threshold 0–1
+uniform float threshold;   
 
 void main() {
     vec3 col = texture(texture0, fragTexCoord).rgb;

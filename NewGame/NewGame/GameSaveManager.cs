@@ -105,7 +105,7 @@ public static class GameSaveManager
         save.WorldSeed = overrideSeed ?? WorldGeneration.Instance.seed;
 
         // player snapshot (best-effort)
-        var player = WorldGeneration.Instance.playerRef;
+        var player = Game.player;
         if (player != null)
         {
             save.PlayerX = player.transform.position.X;
