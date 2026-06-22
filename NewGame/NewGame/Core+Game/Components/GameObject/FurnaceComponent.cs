@@ -30,22 +30,23 @@ public class FurnaceComponent : Component
 
     public FurnaceStateDTO ToDTO()
     {
-        var dto = new FurnaceStateDTO();
-        dto.inputItemId = inputSlot?.itemInSlot?.ID ?? -1;
-        dto.inputAmount = inputSlot?.amount ?? 0;
-        dto.fuelItemId = fuelSlot?.itemInSlot?.ID ?? -1;
-        dto.fuelAmount = fuelSlot?.amount ?? 0;
-        dto.resultItemId = resultSlot?.itemInSlot?.ID ?? -1;
-        dto.resultAmount = resultSlot?.amount ?? 0;
-        dto.smeltProgressNormalized = smeltProgressNormalized;
-        dto.fuelTime = fuelTime;
-        dto.active = active;
+        var dto = new FurnaceStateDTO
+        {
+            inputItemId = inputSlot?.itemInSlot?.ID ?? -1,
+            inputAmount = inputSlot?.amount ?? 0,
+            fuelItemId = fuelSlot?.itemInSlot?.ID ?? -1,
+            fuelAmount = fuelSlot?.amount ?? 0,
+            resultItemId = resultSlot?.itemInSlot?.ID ?? -1,
+            resultAmount = resultSlot?.amount ?? 0,
+            smeltProgressNormalized = smeltProgressNormalized,
+            fuelTime = fuelTime,
+            active = active
+        };
         return dto;
     }
 
     public void FromDTO(FurnaceStateDTO dto)
     {
-        // helper to create Item instance without spawning into world
         Item? item;
         if (dto.inputItemId >= 0)
         {

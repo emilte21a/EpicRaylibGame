@@ -152,6 +152,8 @@ public class Chunk
     private const float SURFACE_NOISE_SCALE = 10;
     private const int SURFACE_OFFSET = 30;
 
+    private const int NOISE_STEP = 4;
+
     static Perlin surfaceNoise = new Perlin();
     static Perlin caveNoise = new Perlin();
     static Perlin caveNoiseOctave = new Perlin();
@@ -204,19 +206,33 @@ public class Chunk
 
     void GenerateChunk()
     {
+        int chunkTileOriginY = (int)(position.Y / Core.UNIT_SIZE);
+        int chunkTileOriginX = (int)(position.X / Core.UNIT_SIZE);
+
+        int chunkTileEndY = chunkTileOriginY + chunkSize;
+
+        var caveGrid = BakeCaveNoiseGrid();
+
         for (int x = 0; x < chunkSize; x++)
         {
             int worldTileX = (int)((position.X / Core.UNIT_SIZE) + x);
             double nx = worldTileX * 0.01;
 
-            int rngSeed = chunkSeed ^ (worldTileX * 73856093);
-            var rng = new Random(rngSeed);
 
             int surfaceWorldY = EvaluateSurfaceWorldY(worldTileX);
 
-            for (int localY = 0; localY < chunkSize; localY++)
+            if (surfaceWorldY >= chunkTileEndY) continue;
+
+            int startLocalY = Math.Max(0, surfaceWorldY - chunkTileOriginY);
+
+            int rngSeed = chunkSeed ^ (worldTileX * 73856093);
+            var rng = new Random(rngSeed);
+
+            float depthDenomInv = 1f / Math.Max(1, chunkHeight - surfaceWorldY);
+
+            for (int localY = startLocalY; localY < chunkSize; localY++)
             {
-                int worldTileY = (int)((position.Y / Core.UNIT_SIZE) + localY);
+                int worldTileY = chunkTileOriginY + localY;
 
                 if (worldTileY < surfaceWorldY)
                     continue;
@@ -225,12 +241,12 @@ public class Chunk
                 if (tileMap.ContainsKey(index)) continue;
 
                 double ny = worldTileY * 0.01;
-                float depthNormalized = Math.Clamp((worldTileY - surfaceWorldY) / (float)(chunkHeight - surfaceWorldY), 0f, 1f);
+                float depthNormalized = Math.Clamp((worldTileY - surfaceWorldY) * depthDenomInv, 0f, 1f);
 
                 const float caveBaseChance = 1.1f;
                 const float caveMaxChance = 1.7f;
                 float caveChance = Raymath.Lerp(caveBaseChance, caveMaxChance, depthNormalized / 2);
-                double caveValue = (caveNoise.GetValue(nx, ny, 0) + 1.0) * 0.5 / caveChance + (simplex.GetValue(nx, ny, 0) + 1) * 0.5f / caveChance;
+                double caveValue = SampleCaveValueInterpolated(caveGrid, x, localY) / caveChance;//(caveNoise.GetValue(nx, ny, 0) + 1.0) * 0.5 / caveChance + (simplex.GetValue(nx, ny, 0) + 1) * 0.5f / caveChance;
                 double caveTunnelNoise = (caveNoiseOctave.GetValue(nx, ny, 0) + 1.0) * 0.5d;
 
                 if (caveValue > CAVE_MIN_THRESHOLD && caveValue < CAVE_MAX_THRESHOLD)
@@ -517,5 +533,46 @@ public class Chunk
         }
 
         return new StoneTile();
+    }
+
+    private float[,] BakeCaveNoiseGrid()
+    {
+        int sampleW = (chunkSize / NOISE_STEP) + 2;
+        int sampleH = (chunkSize / NOISE_STEP) + 2;
+        var grid = new float[sampleW, sampleH];
+
+        int chunkTileX = (int)(position.X / Core.UNIT_SIZE);
+        int chunkTileY = (int)(position.Y / Core.UNIT_SIZE);
+
+        for (int sx = 0; sx < sampleW; sx++)
+            for (int sy = 0; sy < sampleH; sy++)
+            {
+                int worldX = chunkTileX + sx * NOISE_STEP;
+                int worldY = chunkTileY + sy * NOISE_STEP;
+                double nx = worldX * 0.01;
+                double ny = worldY * 0.01;
+
+                float cave = (float)((caveNoise.GetValue(nx, ny, 0) + 1.0) * 0.5);
+                float simp = (float)((simplex.GetValue(nx, ny, 0) + 1.0) * 0.5);
+                grid[sx, sy] = cave + simp;
+            }
+        return grid;
+    }
+
+    private float SampleCaveValueInterpolated(float[,] grid, int localX, int localY)
+    {
+        float gx = (float)localX / NOISE_STEP;
+        float gy = (float)localY / NOISE_STEP;
+
+        int x0 = (int)gx, x1 = x0 + 1;
+        int y0 = (int)gy, y1 = y0 + 1;
+        float tx = gx - x0, ty = gy - y0;
+
+        x1 = Math.Min(x1, grid.GetLength(0) - 1);
+        y1 = Math.Min(y1, grid.GetLength(1) - 1);
+
+        float top = MathF.FusedMultiplyAdd(grid[x1, y0] - grid[x0, y0], tx, grid[x0, y0]);
+        float bottom = MathF.FusedMultiplyAdd(grid[x1, y1] - grid[x0, y1], tx, grid[x0, y1]);
+        return MathF.FusedMultiplyAdd(bottom - top, ty, top);
     }
 }

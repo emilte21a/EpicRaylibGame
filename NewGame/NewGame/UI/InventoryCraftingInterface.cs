@@ -71,6 +71,8 @@ public class InventoryCraftingInterface : UserInterface, ISlotContainer
         var player = Game.player;
         if (player == null || component == null) return;
 
+        if(!isOpen) return;
+
         for (int i = 0; i < craftingSlots.Count; i++)
         {
             if (Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), craftingSlots[i].rectangle))

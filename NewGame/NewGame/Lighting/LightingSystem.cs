@@ -475,7 +475,7 @@ public class LightingSystem
         Raylib.SetShaderValue(godrayOcclusionShader, uLightPosLoc, light01, ShaderUniformDataType.Vec2);
 
         // Control params
-        Raylib.SetShaderValue(godrayOcclusionShader, uExposureLoc, 0.6f, ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(godrayOcclusionShader, uExposureLoc, 0.3f, ShaderUniformDataType.Float);
         Raylib.SetShaderValue(godrayOcclusionShader, uDecayLoc, 0.96f, ShaderUniformDataType.Float);
         Raylib.SetShaderValue(godrayOcclusionShader, uDensityLoc, 0.9f, ShaderUniformDataType.Float);
         Raylib.SetShaderValue(godrayOcclusionShader, uWeightLoc, 0.8f, ShaderUniformDataType.Float);
